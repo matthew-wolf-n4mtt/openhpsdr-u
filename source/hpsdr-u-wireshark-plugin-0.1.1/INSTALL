@@ -1,0 +1,429 @@
+23-JAN-2016 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
+
+You need the Wireshark sources to compile this Wireshark plug-in. 
+It is best to compile Wireshark before compiling the plug-in. 
+Compiling Wireshark will validate that you have all libraries needed 
+to compile the plug-in. 
+
+Linux
+-----
+I assume if you are reading this file you have some experience with compiling
+open source projects on Linux.
+
+If you do not want to do a full compile of Wireshark, the minimum 
+you should do is run the configure (./configure) script.
+You need to resolve any issues the configure script discovers.
+
+You may need to use options when running the configure script if
+you do not have all the default libraries installed. The default is that
+Wireshark GUI will be compiled. Running the configure script with 
+"--disable-wireshark" will tell the script not to look for the Xorg, QT, and 
+GTK libraries. 
+
+Windows
+-------
+I assume that if you are reading this file you do not have much experience 
+with compiling open source projects on Windows. 
+
+I also assume that you do not have Wireshark installed.
+
+The installation steps for Windows below will include steps to install the 
+complier and the needed libraries. 
+
+
+-------------------------------------------------------------------------------
+
+Version 0.1.0 of the plug-in was developed with Wireshark 2.0.1.
+This plug-in likely will only work correctly with version 2.x of
+Wireshark.
+
+These instructions will not include the full compile / build of wireshark
+build.The intention of the instructions id to allow you to compile 
+the plug-in and then manually copy the plug-in to the correct location.
+
+The INSTALL file in the root directory of the Wireshark tar ball 
+provides the details on how to compile Wireshark.
+
+
+Download the Source
+-------------------
+
+At the time this document was created, the link to download
+Wireshark was:
+https://www.wireshark.org/#download 
+
+1. Down load Wireshark Source.
+2. Unpack the source file somewhere. 
+
+
+Add The Plug-in to The Wireshark Build Files
+--------------------------------------------
+These instructions are sourced from section "3.2 Permanent addition" 
+of the /doc/README.plugins file from the Wireshark source.
+
+1.  Changes to plugins/Makefile.am
+
+The plugins directory contains a Makefile.am.  You need to add to SUBDIRS
+the name of your plugin:
+
+SUBDIRS = $(_CUSTOM_SUBDIRS_) \
+	...
+	ethercat \
+	foo \
+	gryphon \
+	irda \
+        hpsdr_u
+
+Add "hpsdr_u" to the end of the list. An example is above. YOU NEED 
+TO ADD " \" TO THE END OF THE LINE ABOVE WHERE YOU ADD "hpsdr_u".
+Do not add spaces from the beginning of the line, add white space as a TAB.
+Also do not add any white space after the "\".
+
+2. Changes to plugins/Makefile.nmake
+
+In plugins/Makefile.nmake you need to add to PLUGINS_LIST the name 
+of your plugin:
+
+PLUGIN_LIST = \
+	...
+	ethercat    \
+	foo         \
+	gryphon     \
+	irda        \
+        hpsdr_u
+
+Add "hpsdr_u" to the end of the list. An example is above. YOU NEED 
+TO ADD " \" TO THE END OF THE LINE ABOVE WHERE YOU ADD "hpsdr_u".
+Do not add spaces from the beginning of the line, add white space as a TAB.
+Also do not add any white space after the "\".
+
+3. Changes to the top level Makefile.am
+
+Add your plugin (in alphabetical order) to plugin_ldadd:
+
+if HAVE_PLUGINS
+
+plugin_ldadd = $(_CUSTOM_plugin_ldadd_) \
+	...
+	-dlopen plugins/ethercat/ethercat.la \
+	-dlopen plugins/foo/foo.la \
+	-dlopen plugins/gryphon/gryphon.la \
+	-dlopen plugins/irda/irda.la \
+	-dlopen plugins/hpsdr_u/hpsdr_u.la
+
+Add "-dlopen plugins/hpsdr_u/hpsdr_u.la" to the end of the list. 
+An example is above. YOU NEED TO ADD " \" TO THE END OF THE LINE 
+ABOVE WHERE YOU ADD "-dlopen plugins/hpsdr_u/hpsdr_u.la".
+Do not add spaces from the beginning of the line, add white space as a TAB.
+Also do not add any white space after the "\".
+
+4.  Changes to the top level configure.ac
+
+You need to add your plugins Makefile to the AC_OUTPUT rule in 
+the configure.ac
+
+AC_OUTPUT(
+  ...
+  plugins/ethercat/Makefile
+  plugins/foo/Makefile
+  plugins/gryphon/Makefile
+  plugins/irda/Makefile
+  plugins/hpsdr_u/Makefile
+  tools/Makefile
+  ...
+  ,)
+
+Add "plugins/hpsdr_u/Makefile" after the last "plugins" line. An 
+example is above. 
+
+
+5.  Changes to epan/Makefile.am
+
+Add the relative path of all your plugin source files to plugin_src:
+
+plugin_src = \
+        ...
+	../plugins/ethercat/packet-ioraw.c \
+	../plugins/ethercat/packet-nv.c \
+	../plugins/foo/packet-foo.c \
+	../plugins/gryphon/packet-gryphon.c \
+	../plugins/irda/packet-ircomm.c \
+	../plugins/irda/packet-irda.c \
+        ../plugins/packet-hpsdr_u.c
+
+Add "../plugins/packet-hpsdr_u.c" to the end of the list. An example is
+above. YOU NEED TO ADD " \" TO THE END OF THE LINE ABOVE WHERE YOU 
+ADD "../plugins/packet-hpsdr_u.c".
+Do not add spaces, add white space as a TAB.
+
+6.  Changes to CMakeLists.txt
+
+Add your plugin to the PLUGIN_SRC_DIRS:
+
+if(ENABLE_PLUGINS)
+        ...
+        set(PLUGIN_SRC_DIRS
+                ...
+                plugins/ethercat
+                plugins/foo
+                plugins/gryphon
+                plugins/irda
+                plugins/hpsdr_u
+
+Add "plugins/hpsdr_u" to the end of the list. An example is above.
+
+
+Linux Instructions
+------------------
+Down load the source and make the changes to the Wireshark source Build Files
+
+-Copy the "hpsdr_u" to the "plugins" directory.
+--- Download and unpack the hpsdr_u plug-in source to some where.
+--- cd <SOME PATH>/hpsdr-u-wireshark-plugin-<VERSION>
+--- cp -r hpsdr_u <SOME PATH>/wireshark-<VERSION>/plugins/
+
+-Generate Plug-in Build Files
+-- Make the change to Wireshark build files. See the "Add The Plug-in to 
+-- The Wireshark Build Files" above in this document.
+--
+-- Run this commands from the root directory of the Wireshark source.
+-- automake 
+-- autoconf
+-- ./configure
+--
+-- You may need to use options when running the configure script if
+-- you do not have all the default libraries installed. The default is that
+-- the Wireshark GUI will be compiled. Running the configure script with 
+-- "--disable-wireshark" will tell the script not to look for the Xorg, QT, and 
+-- GTK libraries. 
+
+-Compile the Plug-in
+-- Start at the root directory of the Wireshark source.
+-- cd plugins/hpsdr_u
+-- make
+
+-Install the Plug-in in Default Location 
+-- This will install the plug-in to the default location.
+-- The default is /usr/local/lib/wireshark/plugins/<VERSION>/
+-- This can be change when running "./configure in the Build Files step.
+-- From the Wireshark source directory run "./configure --help". Review
+-- the "--prefix=" option.
+--
+-- Run this command from the <wireshark source>/plugins/hpsdr_u directory.
+-- The command needs to run as the root user. The sudo command will run the
+-- command as the root user.
+--
+-- sudo make install
+
+-Manually Install the Plug-in
+-- You need to discover where Wireshark looks for Plug-ins.
+-- Open the Wireshark GUI.
+-- Goto the Help Menu.
+-- Open the "About Wireshark Menu".
+-- Click on the Plugins tab.
+-- Look and see where the other plugins are located.
+--
+-- Run this command from the <wireshark source>/plugins/hpsdr_u directory.
+-- The command needs to run as the root user. The sudo command will run the
+-- command as the root user.
+--
+-- sudo cp .libs/hpsdr_u.so <location of other plug-ins>
+--
+-- This step is optional but recommended. This step installs the libtool
+-- library file. This file lists the library dependences of the plug-in.
+-- The command needs to run as the root user. The sudo command will run the
+-- command as the root user. 
+-- 
+-- sudo cp .libs/hpsdr_u.la <location of other plug-ins>
+
+-Validate Plug-in Installation
+--Open the Wireshark GUI.
+-- Goto the Help Menu.
+-- Open the "About Wireshark Menu".
+-- Click on the Plugins tab.
+-- Find "hpsdr_u.so" in the "Name" column.
+-- You can also validate the version of the plug-in 
+-- in the "Version" column.
+--
+-- Finally capture and disassemble some traffic!
+
+
+MS Windows Instructions
+-----------------------
+I started out trying to provide a list of steps needed to compile the plug-in on 
+Windows. Compiling Wireshark and it's plug-ins for MS Windows is not trivial. Below 
+is more a set of notes on how to compile Wireshark.
+
+
+To do a full compile of Wireshark for Windows review:
+
+https://www.wireshark.org/docs/wsdg_html_chunked/ChSetupWin32.html 
+and
+https://www.wireshark.org/docs/wsdg_html_chunked/ChSetupCMake.html
+
+The instructions below where developed using the two links above. The steps 
+below have been tested on Windows 10 Pro.
+
+
+-Install Wireshark 
+-- Goto wireshark.org and download the installer For windows.
+-- Run the Wireshark installed. DO NOT FORGET TO INSTALL
+-- WINPCAP! The winpcap driver is what allows Wireshark to
+-- capture the Ethernet frames.
+-- Winpcap does not work with all network drivers on Windows 10.
+-- You may need to remove WinPcap and install Win10-Pcap, 
+-- http://www.win10pcap.org/  
+
+
+-Install Chocolatey
+-- Open a Administrative Command Prompt
+-- Enter the command below and press enter. 
+-- ( The command is from the home page of chocolatey.org)
+--
+@powershell -NoProfile -ExecutionPolicy Bypass -Command "iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))" && SET PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin
+--
+-- 
+
+-Install Install Microsoft C compiler and SDK
+-- From Administrative Command Prompt
+--
+-- choco install VisualStudioCommunity2013
+--
+-- Answer "yes" to the question.
+-- Wait for Visual Studio to install.
+--
+
+-Install Cygwin
+-- From Administrative Command Prompt
+--
+-- choco install cygwin
+--  
+-- YES - Accept the license
+-- When you see "Cygwin has been installed."
+-- Press: Ctrl-C
+-- 
+-- choco install cyg-get 
+--
+-- YES - Accept the license
+--
+-- choco install winflexbison   
+--
+-- Answer "yes" to the question.
+!!!!!! DID not install Interpreters/perl!!!!
+!!! text/sciidoc
+!!! text/docbook-xml45
+-- use cygwinsetup to install -located:
+-- c:\ProgramData\chcolatey\lib\Cygwin\tools\cygwin
+
+-Install Python
+-- From Administrative Command Prompt
+--
+-- choco install python2
+--
+-- YES - Accept the license
+
+-Install CMake
+-- From Administrative Command Prompt
+--
+-- choco install cmake.portable
+-- YES - Accept the license
+--
+
+
+-Unpack the Wireshark Source.
+--Click on the Cygwin Terminal Icon on the desktop
+--Enter the command to change the working directory:
+-- cd /cygdrive/c/Users/<USER NAME>/<Where you downloaded the Wireshark Source>
+--  Change the command if needed. The key is "/cygdrive/" after that its just 
+--  a normal UNIX file path. I downloaded the source to my download directory. 
+--  My version of the command was:
+--  "cd /cygdrive/c/Users/Matthew/Downloads"
+--
+-- Create a directory to unpack the source into. I used "build" in my 
+-- Document directory.
+--
+-- tar xfj ./wireshark-<version>.tar.bz2 -C <destination directory>   
+--  Since the Document and Download directories have the same parent directory
+--  my command was "tar xfj ./wireshark-<version>.tar.bz2 -C ../Documents/build
+--
+
+-Copy the plug-in source in the Source Tree
+--I assume that if you are reading this file you have all ready unpack the 
+--Plug-in source.
+--
+--Copy the hpsdr_u directory from the plug-in source to the "plugins" 
+
+-Generate Plug-in Build Files
+-- Make the change to Wireshark build files. See the "Add The Plug-in to 
+-- The Wireshark Build Files" above in this document.
+-- The files are UNIX text files use WorkPad to edit the files.
+--
+
+-Open Visual Studio Command Prompt
+-- Goto the Visual Studio Tools directory.
+-- Open the Command Prompt for architecture you want to compile.
+-- Enter:
+-- set CYGWIN=nodosfilewarning
+-- set WIRESHARK_BASE_DIR=<location of Wireshark Source>
+--  My version was "set WIRESHARK_BASE_DIR=c:\Users\Matthew\build\Wireshark-<VER>
+--
+--set WIRESHARK_TARGET_PLATFORM=win64 
+-- or win32 as required
+--
+-- Change the active directory to where the Wireshark source is located.
+-- cd <wireshark root source>
+-- 
+-- Make the build subdirectory.  The build is going to use CMake. With CMake is
+-- is best to create a build directory. I used "wsbuild64".
+--  mkdir wsbuild64
+--
+-- Change the active directory to the build directory.
+--  cd wsbuild64
+--
+
+-Generate Build Files
+-- Run this command from the build directory.
+-- Run the command in the Visual Studio Command Prompt.
+--
+-- cmake -DPYTHON_EXECUTABLE=c:/tools/python2/python -G "Visual Studio 12 2013 Win64" ..
+--
+-- You may need to change the -G option if you are not compiling for Win64.
+-- "cmake -G" will list the available options
+-- You will need Internet access. Needed software packages and libraries may  
+-- be downloaded.
+--
+
+-Compile the Plug-in
+-Generate Build Files
+-- Run this command from the build directory.
+-- Run the command in the Visual Studio Command Prompt.
+--
+-- msbuild /m /p:Configuration=RelWithDebInfo Wireshark.sln
+--
+
+-Manually Install the Plug-in
+-- You need to discover where Wireshark looks for Plug-ins.
+-- Open the Wireshark GUI.
+-- Goto the Help Menu.
+-- Open the "About Wireshark Menu".
+-- Click on the Plugins tab.
+-- Look and see where the other plugins are located.
+-- When I installed the Wireshark via the installer, Wireshark was
+-- expecting the plug-ins in the the directory:
+-- C:\Program Files\Wireshark\plugins\<version>\
+--
+-- copy the file: <build dir>\run\RelWithDebinfo\plugins\hpsdr_u.dll
+-- to wherever Wireshark is looking for plug-ins.
+--
+
+-Validate Plug-in Installation
+--Open the Wireshark GUI.
+-- Goto the Help Menu.
+-- Open the "About Wireshark Menu".
+-- Click on the Plugins tab.
+-- Find "hpsdr_u.dll" in the "Name" column.
+-- You can also validate the version of the plug-in 
+-- in the "Version" column.
+--
+-- Finally capture and disassemble some traffic!
+

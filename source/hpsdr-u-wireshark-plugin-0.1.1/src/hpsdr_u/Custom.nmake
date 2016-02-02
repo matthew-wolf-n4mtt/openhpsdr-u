@@ -1,0 +1,30 @@
+#
+
+include ..\config.nmake
+
+all: hpsdr_u
+
+hpsdr_u:: 
+	cd hpsdr_u
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake
+	cd ..
+
+clean:
+	cd hpsdr_u
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake clean
+	cd ..
+
+distclean: clean
+	cd hpsdr_u
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake distclean
+	cd ..
+
+maintainer-clean: distclean
+	cd hpsdr_u
+	$(MAKE) /$(MAKEFLAGS) -f Makefile.nmake maintainer-clean
+	cd ..
+
+install-plugins:
+!IFDEF ENABLE_LIBWIRESHARK
+	xcopy hpsdr_u\*.dll ..\$(INSTALL_DIR)\plugins\ /d
+!ENDIF

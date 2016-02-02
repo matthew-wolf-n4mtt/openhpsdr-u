@@ -1,5 +1,7 @@
 31-JAN-2016 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
 
+THE 32 BIT VERSION of the PLUG-IN IS UNTESTED!!!!!
+
 The HPSDR-USB Plug-in for Wireshark is written to disassemble the protocol
 that is defined in the documents listed below.
  

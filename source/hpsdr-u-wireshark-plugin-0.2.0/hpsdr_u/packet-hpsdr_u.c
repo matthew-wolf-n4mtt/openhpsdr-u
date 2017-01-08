@@ -37,21 +37,6 @@
  * HPSDR - USB Data Protocol, Version 1.58: 4-Aug-2014
  * http://svn.tapr.org/repos_sdr_hpsdr/trunk/Documentation/USB_protocol_V1.58.doc
  *
- * Version: 0.1.0
- * - There is no disassembly of status 3 datagrams. Status 3 is used to
- *   manually set the SDR's IP address and program the SDR's firmware.
- * - There is no disassembly of USB end point 4 datagrams. USB end point 4 
- *   is used for sending raw ADC (Wide Band-scope) samples to the HOST. The 
- *   Wide Band-scope bit in the Start / Stop Command is disassembled. 
- *
- * Version: 0.1.1
- * - While waiting for SVN access I started to work on a plug-in for the openHPSDR 
- *   Ethernet Protocol. Both the USB over IP and the Ethernet protocol use UDP 
- *   port 1024. This means that the two plug-ins have to coexist with each other.
- * - Changed the plug-in to registering as heuristic dissector. The plug-in tests 
- *   the first two bytes of the UDP payload for the 0xEFFE id. Then it does not 
- *   see the ID it exits. 
- *
  */
 #include "config.h"
 #include <epan/packet.h>

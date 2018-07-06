@@ -1,13 +1,13 @@
-6-JAN-2017 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
+06-JUL-2018 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
 
 The HPSDR-USB Plug-in for Wireshark is written to disassemble the protocol
 that is defined in the documents listed below.
  
 Metis - How it Works_V1.33: 28-Feb-2015
-http://svn.tapr.org/repos_sdr_hpsdr/trunk/Metis/Documentation/Metis-%20How%20it%20works_V1.33.pdf  
+https://github.com/TAPR/OpenHPSDR-SVN/blob/master/Metis/Documentation/Metis-%20How%20it%20works_V1.33.pdf
 
 HPSDR - USB Data Protocol, Version 1.58: 4-Aug-2014
-http://svn.tapr.org/repos_sdr_hpsdr/trunk/Documentation/USB_protocol_V1.58.doc
+https://github.com/TAPR/OpenHPSDR-SVN/blob/master/Documentation/USB_protocol_V1.58.doc
 
 Version: 0.1.0
  - There is no disassembly of status 3 datagrams. Status 3 is used to

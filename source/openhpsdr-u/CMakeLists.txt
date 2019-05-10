@@ -14,7 +14,7 @@
 cmake_minimum_required(VERSION 3.1)
 cmake_policy(SET CMP0048 NEW)
 
-project(openhpsdr-u VERSION 0.3.0 DESCRIPTION "Wireshark  OpenHPSDR-USB Plug-in" LANGUAGES C)
+project(openhpsdr-u VERSION 0.3.0 DESCRIPTION "Wireshark OpenHPSDR-USB Plug-in" LANGUAGES C)
 
 find_package(Wireshark CONFIG REQUIRED)
 

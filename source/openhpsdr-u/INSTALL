@@ -1,12 +1,40 @@
 09-MAY-2019 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
 
+1. Remove old Plug-in Library File
+----------------------------------
+
+Starting with version 0.3.0 the name of the plug-in library file has changed.
+
+Do you have any older version of the plug-in installed?
+
+If yes, you need to remove the older plug-in file before installing the 
+the new plug-in.
+
+  A. Unix / Linux Plug-in Library File Removal
+  --------------------------------------------
+  1. You need to discover where Wireshark looks for Plug-ins.
+     a. Open the Wireshark GUI.
+     b. Go to the Help Menu.
+     c. Open the "About Wireshark Menu".
+     d. Click on the Plugins tab.
+     e.Look and see where the other plugins are located.
+
+  2. Remove old plug-in library file.
+
+     sudo rm <location of other plug-ins>/hpsdr_u.so
+
+  B. Microsoft Windows Plug-in Library File Removal
+  -------------------------------------------------
+  1. Delete the file listed below. 
+     C:\Program Files\Wireshark\plugins\<version>\hpsdr-u.dll
+
+2. Compile the Plug-in
+----------------------
+
 Version 0.3.0 was developed with Wireshark 3.0.1.
 
 I assuming that that build environment for Wireshark has all ready been
 created.
-
-1. Compile the Plug-in
-----------------------
 
 There are two ways to compile the plug-in. Outside or inside the 
 Wireshark source tree.

@@ -59,7 +59,14 @@ Wireshark source tree.
   4. Enter the Build directory and run cmake.
 
     cd build
-    cmake .. 
+    cmake ..  -DCMAKE_PREFIX_PATH=<Path to WiresharkConfig.cmake file>
+    
+    Note:  
+      When the WiresharkConfig.cmake is not included in the cmake search
+      paths you need to add " -DCMAKE_PREFIX_PATH=" when cmake is run.
+      cmake -DCMAKE_PREFIX_PATH=<Path to WiresharkConfig.cmake file> ..
+      An example location for the WiresharkConfig.cmake file is: 
+        /usr/local/lib/wireshark
 
   6. Run make to build the plug-in.
 

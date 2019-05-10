@@ -1,4 +1,4 @@
-09-MAY-2019 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
+10-MAY-2019 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
 
 1. Remove old Plug-in Library File
 ----------------------------------
@@ -43,6 +43,10 @@ Wireshark source tree.
   A. Build the Plug-in Out Side of the Wireshark Source Tree
   ----------------------------------------------------------
 
+  !!! THIS DOES NOT WORK !!!
+  - There is an issue with the plug-in source file name that causes the
+    plug-in version not to be set in the library file.
+
   You will need to have the Wireshark development libraries installed.
 
   1. Unpack the plug-in source file somewhere.
@@ -59,14 +63,7 @@ Wireshark source tree.
   4. Enter the Build directory and run cmake.
 
     cd build
-    cmake ..  -DCMAKE_PREFIX_PATH=<Path to WiresharkConfig.cmake file>
-    
-    Note:  
-      When the WiresharkConfig.cmake is not included in the cmake search
-      paths you need to add " -DCMAKE_PREFIX_PATH=" when cmake is run.
-      cmake -DCMAKE_PREFIX_PATH=<Path to WiresharkConfig.cmake file> ..
-      An example location for the WiresharkConfig.cmake file is: 
-        /usr/local/lib/wireshark
+    cmake ..  
 
   6. Run make to build the plug-in.
 

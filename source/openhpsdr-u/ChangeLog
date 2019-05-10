@@ -1,0 +1,45 @@
+09-MAY-2019 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
+
+Version: 0.3.0
+  - Wireshark version 3.0.1
+  - Candidate for first release.
+  - Changed source name from "hpsdr_u" to "openhpsdr-u". New name is the same
+     format as the OpenHPSDR Ethernet plug-in , openhpsdr-e.  
+  - Changed Heuristic dissector short_name from "hpsdr_u_udp" to "openhpsdr-u". 
+  - Added references for Protocol 1 to text strings.  
+    -- New Heuristic dissector display_name: "OpenHPSDR USB - P1 - USB in UDP" 
+    -- New Name: "OpenHPSDR USB Over IP - Protocol 1"
+    -- New Short Name: "HPSDR-USB_P1"
+    -- No change to Abbreviation: "hpsdr-u" 
+  - Added a preference to display the Hermes-Lite changes to Command and
+    Control.
+
+Version: 0.2.0
+  - Wireshark version 2.2.3
+  - Added disassembly of status 3 datagrams.
+  - Added disassembly of USB end point 4 datagrams.
+  - Added zero padding.
+  - Added validation of the length of the datagrams.
+  - Added protocol preferences to enable or disable some of the length testing.
+  - Rewrote disassembly of Discovery and Start-Stop status.
+  - Cleaned up formatting and field names in attempt to improve
+    understandably.
+  - The Plug-in should disassemble every thing that is included in the
+    Protocol.
+
+Version: 0.1.1
+ - While waiting for SVN access I started to work on a plug-in for the OpenHPSDR
+   Ethernet Protocol. Both the USB over IP and the Ethernet protocol use UDP
+   port 1024. This means that the two plug-ins have to coexist with each other.
+ - Changed the plug-in to registering as heuristic dissector. The plug-in tests
+   the first two bytes of the UDP payload for the 0xEFFE id. Then it does not
+   see the ID it exits.
+ - I do not foresee any more updates until I finish the plug-in for the OpenHPSDR
+   Ethernet Protocol.
+
+Version: 0.1.0
+ - There is no disassembly of status 3 datagrams. Status 3 is used to
+   manually set the SDR's IP address and program the SDR's firmware.
+ - There is no disassembly of USB end point 4 datagrams. USB end point 4 
+   is used for sending raw ADC (Wide Band-scope) samples to the HOST. The 
+   Wide Band-scope bit in the Start / Stop Command is disassembled. 

@@ -1,25 +1,29 @@
-/* packet-hpsdr_u.h  
- * Header file for the HPSDR USB over IP protocol packet disassembly
+/* packet-openhpsdr-u.h
+ * Header file for the OpenHPSDR USB over IP protocol packet disassembly
  *
- * This file is part of the HPSDR-USB Plug-in for Wireshark.
- * By Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
+ * Version: 0.3.0
+ * Author:  Matthew J Wolf, N4MTT
+ * Date:    03-MAY-2019
+ *
+ * This file is part of the OpenHPSDR-USB Plug-in for Wireshark.
+ * Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
  * Copyright 2017 Matthew J. Wolf
  *
- * The HPSDR-USB Plug-in for Wireshark is free software: you can 
- * redistribute it and/or modify it under the terms of the GNU 
+ * The OpenHPSDR-USB Plug-in for Wireshark is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU
  * General Public License as published by the Free Software Foundation,
  * either version 2 of the License, or (at your option) any later version.
- * 
- * The HPSDR-USB Plug-in for Wireshark is distributed in the hope that
- * it will be useful, but WITHOUT ANY WARRANTY; without even the implied 
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See 
+ *
+ * The OpenHPSDR-USB Plug-in for Wireshark is distributed in the hope that
+ * it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
  * the GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with the HPSDR-USB Plug-in for Wireshark.  
+ * along with the OpenHPSDR-USB Plug-in for Wireshark.
  * If not, see <http://www.gnu.org/licenses/>.
  */
- 
+
 #define HPSDR_U_PORT 1024
 
 #define ZERO_MASK     0x00
@@ -27,12 +31,12 @@
 #define ALL_BITS_MASK 0xFF
 #define BIT12_MASK    0x0FFF
 #define BIT16_MASK    0xFFFF
-#define BIT24_MASK    0xFFFFFF	
+#define BIT24_MASK    0xFFFFFF
 
 //GLOBAL FLAGS MASKS
 #define GF_START_STOP_ST 0x01 //0b00000001
-#define GF_IQ_STATE      0x02 //0b00000010 
-#define GF_WB_STATE      0x04 //0b00000100 
+#define GF_IQ_STATE      0x02 //0b00000010
+#define GF_WB_STATE      0x04 //0b00000100
 #define GF_BW_IQ_ST_ST   0x07 //0b00000111
 
 // START-STOP MASKS
@@ -62,14 +66,14 @@
 #define SDR_MER_MASK  0xFE //0b11111110
 
 //USB EP2 C0 MASKS
-#define HOST_C0_MOX  0x01 //0b00000001  
+#define HOST_C0_MOX  0x01 //0b00000001
 #define HOST_C0_TYPE 0xFE //0b11111110
 
 //USB EP2 TYPE 0 MASKS
 #define HOST_C1_SPEED 0x03 //0b00000011
 #define HOST_C1_10MHZ 0x0C //0b00001100
 #define HOST_C1_122S  0x10 //0b00010000
-#define HOST_C1_CONF  0x60 //0b01100000 
+#define HOST_C1_CONF  0x60 //0b01100000
 #define HOST_C1_MICS  0x80 //0b10000000
 #define HOST_C2_MODE  0x01 //0b00000001
 #define HOST_C2_OC0   0x02 //0b00000010
@@ -82,14 +86,14 @@
 #define HOST_C3_P_ATT 0x03 //0b00000011
 #define HOST_C3_PREAM 0x04 //0b00000100
 #define HOST_C3_IFDIT 0x08 //0b00001000
-#define HOST_C3_IFRAD 0x10 //0b00010000	
+#define HOST_C3_IFRAD 0x10 //0b00010000
 #define HOST_C3_P_ANT 0x60 //0b01100000
 #define HOST_C3_P_OUT 0x80 //0b10000000
 #define HOST_C4_P_T_R 0x03 //0b00000011
 #define HOST_C4_DUP   0x04 //0b00000100
 #define HOST_C4_RX_NU 0x38 //0b00111000
 #define HOST_C4_T_ST  0x40 //0b01000000
-#define HOST_C4_C_FEQ 0x80 //0b10000000 
+#define HOST_C4_C_FEQ 0x80 //0b10000000
 
 
 //USB EP2 TYPE 12 MASKS
@@ -146,7 +150,7 @@
 #define HOST_2_16_ADC 0x1F //0b00011111
 #define HOST_2_16_AS  0x20 //0b00100000
 #define HOST_C2_2_16  0x7F //00b01111111
-#define HOST_C2_CW_R  0x40 //0b01000000	
+#define HOST_C2_CW_R  0x40 //0b01000000
 #define HOST_C3_CW_S  0x3F //0b00111111
 #define HOST_C3_CW_KM 0xC0 //0b11000000
 #define HOST_C4_CW_KW 0x7F //0b01111111
@@ -180,4 +184,3 @@ static int hpsdr_usb_ep6_frame(proto_tree *tree, tvbuff_t *tvb, int offset, int 
 
 static void dissect_hpsdr_u(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree);
 void proto_reg_handoff_hpsdr_u(void);
-

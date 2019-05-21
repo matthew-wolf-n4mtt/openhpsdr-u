@@ -1,4 +1,4 @@
-09-MAY-2019 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
+20-MAY-2019 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
 
 The OpenHPSDR-USB Plug-in for Wireshark is written to disassemble the 
 OpenHPSDR USB frames over IP protocol. The protocol is also is 
@@ -16,10 +16,14 @@ The protocol is definded in the documents and web page cited below.
     https://github.com/TAPR/OpenHPSDR-SVN/blob/master/Metis/Documentation/Metis-%20How%20it%20works_V1.33.pdf
     [Accessed 3 May 2019].
 
-[3] Softerhardware. “softerhardware/Hermes-Lite”. GitHub. [Online].
+[3] Softerhardware. "softerhardware/Hermes-Lite". GitHub. [Online].
     Available: 
     https://github.com/softerhardware/Hermes-Lite/wiki/Protocol-Coverage
     [Accessed: 06-May-2019].
+
+Version 0.3.1
+  - Due to issue with the Microsoft Windows build. The "-"
+    in the source file system names has been replaced with "_".
 
 Version: 0.3.0
   - Wireshark version 3.0.1

@@ -1,4 +1,8 @@
-09-MAY-2019 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
+20-MAY-2019 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
+
+Version: 0.3.1
+  - Due to issue with the Microsoft Windows build. The "-"
+    in the source file system names has been replaced with "_".``
 
 Version: 0.3.0
   - Wireshark version 3.0.1

@@ -1,9 +1,9 @@
-/* packet-openhpsdr-u.c
+/* packet_openhpsdr_u.c
  * Routines for the OpenHPSDR USB over IP protocol packet disassembly
  *
- * Version: 0.3.0
+ * Version: 0.3.1
  * Author:  Matthew J Wolf, N4MTT
- * Date:    03-MAY-2019
+ * Date:    20-MAY-2019
  *
  * This file is part of the OpenHPSDR-USB Plug-in for Wireshark.
  * Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
@@ -43,7 +43,7 @@
  *     https://github.com/TAPR/OpenHPSDR-SVN/blob/master/Metis/Documentation/Metis-%20How%20it%20works_V1.33.pdf
  *     [Accessed 3 May 2019].
  *
- * [3] Softerhardware. “softerhardware/Hermes-Lite”. GitHub. [Online].
+ * [3] Softerhardware. "softerhardware/Hermes-Lite". GitHub. [Online].
  *     Available:
  *     https://github.com/softerhardware/Hermes-Lite/wiki/Protocol-Coverage
  *     [Accessed: 06-May-2019].
@@ -57,7 +57,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "packet-openhpsdr-u.h"
+#include "packet_openhpsdr_u.h"
 
 //Port definition in packet-openhpsdr-u.h header
 
@@ -486,7 +486,7 @@ static const true_false_string internal_external = {
    "External"
 };
 
-static const true_false_string gain_0_32 = {
+static const true_false_string hl_lna_gain = {
    "+0 dB",     // when true  (1)
    "+32 dB"     // when false (0)
 };
@@ -1005,7 +1005,7 @@ proto_register_hpsdr_u(void)
       { &hf_hpsdr_u_cc_hl_rx_lna_gain,
         { "                   RX LNA Gain", "hpsdr-u.cc.hl-lna-gain",
           FT_BOOLEAN, BOOLEAN_MASK,
-          TFS(&gain_0_32), HOST_C3_IFDIT,
+          TFS(&hl_lna_gain), HOST_C3_IFDIT,
           NULL, HFILL }},
       { &hf_hpsdr_u_cc_adc_random,
         { "                     IF Random", "hpsdr-u.cc.adc-random",

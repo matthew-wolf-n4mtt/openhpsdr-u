@@ -1,9 +1,9 @@
-/* packet-openhpsdr-u.h
+/* packet_openhpsdr_u.h
  * Header file for the OpenHPSDR USB over IP protocol packet disassembly
  *
- * Version: 0.3.0
+ * Version: 0.3.1
  * Author:  Matthew J Wolf, N4MTT
- * Date:    03-MAY-2019
+ * Date:    20-MAY-2019
  *
  * This file is part of the OpenHPSDR-USB Plug-in for Wireshark.
  * Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>

@@ -1,4 +1,4 @@
-10-MAY-2019 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
+20-MAY-2019 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
 
 1. Remove old Plug-in Library File
 ----------------------------------
@@ -31,52 +31,14 @@ the new plug-in.
 2. Compile the Plug-in
 ----------------------
 
-Version 0.3.0 was developed with Wireshark 3.0.1.
+Version 0.3.0.1 was developed with Wireshark 3.0.1.
 
 I assuming that that build environment for Wireshark has all ready been
 created.
 
-There are two ways to compile the plug-in. Outside or inside the 
-Wireshark source tree.
+I have only been able to compile the plug-in in the Wireshark Source Tree.
 
-
-  A. Build the Plug-in Out Side of the Wireshark Source Tree
-  ----------------------------------------------------------
-
-  !!! THIS DOES NOT WORK !!!
-  - There is an issue with the plug-in source file name that causes the
-    plug-in version not to be set in the library file.
-
-  You will need to have the Wireshark development libraries installed.
-
-  1. Unpack the plug-in source file somewhere.
-
-  2. Enter the plug-in source directory.
-
-   cd openhpsdr-u
-
-  3. Create the build directory.
-
-    cd <Wireshark Source Root>
-    mkdir build
-
-  4. Enter the Build directory and run cmake.
-
-    cd build
-    cmake ..  
-
-  6. Run make to build the plug-in.
-
-    cd <Plug-in Source Root>/build
-    make <Your Favorite Options>
-
-  7. Install the plug-in.
-
-    sudo make install
-
-  I used the <Wireshark 3.0.1>/doc/plugins.example/README as reference.
-
-  B. Build the Plug-in in the Wireshark Source Tree
+  Build the Plug-in in the Wireshark Source Tree
   ----------------------------------------------
 
   You need the Wireshark sources to compile the plug-in in the 
@@ -86,9 +48,9 @@ Wireshark source tree.
 
   1. Unpack the plug-in source file somewhere.
 
-  2. Copy and or move the "openhpsdr-u" directory from the plug-in source
+  2. Copy and or move the "openhpsdr_u" directory from the plug-in source
      into the Wireshark source tree.
-     A. Copy or move the "openhpsdr-u" into
+     A. Copy or move the "openhpsdr_u" into
         <Wireshark Source Root>/plugins/epan 
 
   3. Add the plug-in to root CMakeLists.txt file.
@@ -102,11 +64,11 @@ Wireshark source tree.
                   plugins/wimax
                   plugins/wimaxasncp
                   plugins/wimaxmacphy
-                  plugins/openhpsdr-u
+                  plugins/openhpsdr_u
                   ${CUSTOM_PLUGIN_SRC_DIR}
           )
 
-  Add "plugins/openhpsdr-u" to the end of the list. An example is above.
+  Add "plugins/openhpsdr_u" to the end of the list. An example is above.
 
   4.Create the build directory.
 

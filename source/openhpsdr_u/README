@@ -1,4 +1,4 @@
-20-MAY-2019 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
+06-JUN-2019 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
 
 The OpenHPSDR-USB Plug-in for Wireshark is written to disassemble the 
 OpenHPSDR USB frames over IP protocol. The protocol is also is 
@@ -19,55 +19,38 @@ The protocol is definded in the documents and web page cited below.
 [3] Softerhardware. "softerhardware/Hermes-Lite". GitHub. [Online].
     Available: 
     https://github.com/softerhardware/Hermes-Lite/wiki/Protocol-Coverage
-    [Accessed: 06-May-2019].
+    [Accessed: 6 May 2019].
 
-Version 0.3.1
-  - Due to issue with the Microsoft Windows build. The "-"
-    in the source file system names has been replaced with "_".
+[4] Softerhardware. "softerhardware/Hermes-Lite2". GitHub. [Online].
+    Available: 
+    https://github.com/softerhardware/Hermes-Lite2/wiki/Protocol
+    [Accessed: 06 June 2019].
 
-Version: 0.3.0
-  - Wireshark version 3.0.1
-  - Candidate for first release.  
-  - Changed source name from "hpsdr_u" to "openhpsdr-u". New name is the same
-     format as the OpenHPSDR Ethernet plug-in , openhpsdr-e.
-  - Changed Heuristic dissector short_name from "hpsdr_u_udp" to "openhpsdr-u".
-  - Added references for Protocol 1 to text strings.
-    -- New Heuristic dissector display_name: "OpenHPSDR USB - P1 - USB in UDP"
-    -- New Name: "OpenHPSDR USB Over IP - Protocol 1"
-    -- New Short Name: "HPSDR-USB_P1"
-    -- No change to Abbreviation: "hpsdr-u"
-  - Added a preference to display the Hermes-Lite changes to Command and
-    Control.
-
-Version: 0.2.0
-  - Wireshark version 2.2.3
-  - Added disassembly of status 3 datagrams.
-  - Added disassembly of USB end point 4 datagrams.
-  - Added zero padding.
-  - Added validation of the length of the datagrams.
-  - Added protocol preferences to enable or disable some of the length testing.
-  - Rewrote disassembly of Discovery and Start-Stop status.
-  - Cleaned up formatting and field names in attempt to improve
-    understandably.
-  - The Plug-in should disassemble every thing that is included in the
-    Protocol.
-
-Version: 0.1.1
- - While waiting for SVN access I started to work on a plug-in for the OpenHPSDR
-   Ethernet Protocol. Both the USB over IP and the Ethernet protocol use UDP
-   port 1024. This means that the two plug-ins have to coexist with each other.
- - Changed the plug-in to registering as heuristic dissector. The plug-in tests
-   the first two bytes of the UDP payload for the 0xEFFE id. Then it does not
-   see the ID it exits.
- - I do not foresee any more updates until I finish the plug-in for the OpenHPSDR
-   Ethernet Protocol.
-
-Version: 0.1.0
- - There is no disassembly of status 3 datagrams. Status 3 is used to
-   manually set the SDR's IP address and program the SDR's firmware.
- - There is no disassembly of USB end point 4 datagrams. USB end point 4 
-   is used for sending raw ADC (Wide Band-scope) samples to the HOST. The 
-   Wide Band-scope bit in the Start / Stop Command is disassembled. 
+Version 0.4.0
+  - Protocol version 1.60 changes.
+   -- Added "C0 Type" for "2ND Alex, Firmware Envelope Gain"
+  - Renamed preference for Hermes-Lite to a preference for Hermes-Lite1
+  - Added a preference to display the Hermes-Lite2 additions and changes to the
+    protocol.
+  - Added support for undefined "C0 Types".
+  - Length of "C0 Types" corrected. The way the "C0 Types" are listed in the
+    protocol document was the source of my confusion.
+    -- End point 2 changed from 8 bit numbers to 7 bit numbers.
+    -- End point 4 changed from 8 bit numbers to 5 bit numbers.
+  - Included decimal number in the display of "C0 Types".
+  - Added a preference to display the Hermes-Lite2 additions and changes to the
+    protocol.
+  - Opinion: Hermes-Lite2 addition of RQST and ACK creates a new protocol that
+             is not compatible with the "standard" protocol. The length of
+             critical fields are changed. It is bad practice of have a
+             field have multiple lengths. End point 2 "C0 type" is changed
+             to 6 bits. End point 6 "C0 type" is changed to 4 bits. When ACK
+             is high end point 6 "C0 type" is 6 bits because the "Dot" and
+             "Dash" bits are removed and reassigned to "C0 Type". The
+             Hermes-Lite2 protocol specification refers to the "C0 Type" as the
+             word memory map and or addresses. The standard protocol
+             specification refers to the "C0 Type" as bits in
+             "the first C&C byte(C0)".
 
 -------------------------------------------------------------------------------
 

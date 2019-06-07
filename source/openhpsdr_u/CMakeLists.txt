@@ -14,7 +14,7 @@
 include(WiresharkPlugin)
 
 # Plugin name and version info (major minor micro extra)
-set_module_info(openhpsdr_u 0 3 1 0)
+set_module_info(openhpsdr_u 0 4 0 0)
 
 set(DISSECTOR_SRC
 	packet_openhpsdr_u.c

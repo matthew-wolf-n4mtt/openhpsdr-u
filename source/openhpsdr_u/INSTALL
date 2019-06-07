@@ -1,4 +1,4 @@
-20-MAY-2019 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
+06-JUN-2019 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
 
 1. Remove old Plug-in Library File
 ----------------------------------
@@ -28,10 +28,10 @@ the new plug-in.
   1. Delete the file listed below. 
      C:\Program Files\Wireshark\plugins\<version>\hpsdr-u.dll
 
-2. Compile the Plug-in
-----------------------
+2. Unix / Linux Compile the Plug-in 
+-----------------------------------
 
-Version 0.3.0.1 was developed with Wireshark 3.0.1.
+Version 0.4.0 was developed with Wireshark 3.0.1.
 
 I assuming that that build environment for Wireshark has all ready been
 created.

@@ -1,9 +1,9 @@
 /* packet_openhpsdr_u.c
  * Routines for the OpenHPSDR USB over IP protocol packet disassembly
  *
- * Version: 0.3.1
+ * Version: 0.4.0
  * Author:  Matthew J Wolf, N4MTT
- * Date:    20-MAY-2019
+ * Date:    06-JUN-2019
  *
  * This file is part of the OpenHPSDR-USB Plug-in for Wireshark.
  * Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
@@ -33,10 +33,10 @@
  *
  * The protocol is definded in the documents and web page cited below.
  *
- * [1] Harman, Phil. and Martin, Joe. HPSDR - USB Protocol V1.58. 2014, [Online].
+ * [1] Harman, Phil. and Martin, Joe. HPSDR - USB Protocol V1.60. 2019, [Online].
  *     Available at:
- *     https://github.com/TAPR/OpenHPSDR-SVN/blob/master/Documentation/USB_protocol_V1.58.doc
- *     [Accessed 3 May 2019].
+ *     https://github.com/TAPR/OpenHPSDR-SVN/blob/master/Documentation/USB_protocol_V1.60.doc
+ *     [Accessed 30 May 2019].
  *
  * [2] Harman, Phil. Metis - How it Works V1.33. 2015. [Online].
  *     Available at:
@@ -47,6 +47,11 @@
  *     Available:
  *     https://github.com/softerhardware/Hermes-Lite/wiki/Protocol-Coverage
  *     [Accessed: 06-May-2019].
+ *
+ * [4] Softerhardware. "softerhardware/Hermes-Lite2". GitHub. [Online].
+ *     Available:
+ *     https://github.com/softerhardware/Hermes-Lite2/wiki/Protocol
+ *     [Accessed: 30-May-2019].
  *
  */
 
@@ -74,6 +79,7 @@ static gint ett_hpsdr_u_cc_rx_adc = -1;
 static gint ett_hpsdr_u_cc_cw1 = -1;
 static gint ett_hpsdr_u_cc_cw2 = -1;
 static gint ett_hpsdr_u_cc_pwm = -1;
+static gint ett_hpsdr_u_cc_a2_feg = -1;
 static gint ett_hpsdr_u_ep2_data_1 = -1;
 static gint ett_hpsdr_u_ep2_data_2 = -1;
 static gint ett_hpsdr_u_cc_info = -1;
@@ -117,8 +123,18 @@ static int hf_hpsdr_u_c0_dash_1 = -1;
 static int hf_hpsdr_u_c0_dash_2 = -1;
 static int hf_hpsdr_u_c0_dot_1 = -1;
 static int hf_hpsdr_u_c0_dot_2 = -1;
-static int hf_hpsdr_u_c0_type_1 = -1;
-static int hf_hpsdr_u_c0_type_2 = -1;
+static int hf_hpsdr_u_c0_type_ep2_1 = -1;
+static int hf_hpsdr_u_c0_type_ep2_2 = -1;
+static int hf_hpsdr_u_c0_type_ep2_hl2_1 = -1;
+static int hf_hpsdr_u_c0_type_ep2_hl2_2 = -1;
+static int hf_hpsdr_u_c0_type_ep6_1 = -1;
+static int hf_hpsdr_u_c0_type_ep6_2 = -1;
+static int hf_hpsdr_u_c0_type_ep6_hl2_1 = -1;
+static int hf_hpsdr_u_c0_type_ep6_hl2_2 = -1;
+static int hf_hpsdr_u_c0_hl2_rqst_1 = -1;
+static int hf_hpsdr_u_c0_hl2_rqst_2 = -1;
+static int hf_hpsdr_u_c0_hl2_ack_1 = -1;
+static int hf_hpsdr_u_c0_hl2_ack_2 = -1;
 static int hf_hpsdr_u_cc_info_sub = -1;
 static int hf_hpsdr_u_cc_info_c1 = -1;
 static int hf_hpsdr_u_cc_info_adc_overflow = -1;
@@ -155,8 +171,8 @@ static int hf_hpsdr_u_ep6_data_1 = -1;
 static int hf_hpsdr_u_ep6_data_2 = -1;
 static int hf_hpsdr_u_c0_mox_1 = -1;
 static int hf_hpsdr_u_c0_mox_2 = -1;
-static int hf_hpsdr_u_c0_hl_ptt_1 = -1;
-static int hf_hpsdr_u_c0_hl_ptt_2 = -1;
+static int hf_hpsdr_u_c0_hl1_ptt_1 = -1;
+static int hf_hpsdr_u_c0_hl1_ptt_2 = -1;
 static int hf_hpsdr_u_ep2_c0_type_1 = -1;
 static int hf_hpsdr_u_ep2_c0_type_2 = -1;
 static int hf_hpsdr_u_ep2_data_1 = -1;
@@ -170,6 +186,7 @@ static int hf_hpsdr_u_cc_conf_c1_2 = -1;
 static int hf_hpsdr_u_cc_conf_c2_2 = -1;
 static int hf_hpsdr_u_cc_conf_c3_2 = -1;
 static int hf_hpsdr_u_cc_conf_c4_2 = -1;
+static int hf_hpsdr_u_cc_conf_c3_c4 = -1;
 static int hf_hpsdr_u_cc_conf_sub_2 = -1;
 static int hf_hpsdr_u_cc_speed = -1;
 static int hf_hpsdr_u_cc_10mhz = -1;
@@ -186,16 +203,19 @@ static int hf_hpsdr_u_cc_oco_5 = -1;
 static int hf_hpsdr_u_cc_oco_6 = -1;
 static int hf_hpsdr_u_cc_ant_pre_attn = -1;
 static int hf_hpsdr_u_cc_ant_pre_pre_amp = -1;
+static int hf_hpsdr_u_cc_hl2_vna_gain = -1;
 static int hf_hpsdr_u_cc_adc_dither = -1;
-static int hf_hpsdr_u_cc_hl_rx_lna_gain = -1;
+static int hf_hpsdr_u_cc_hl1_rx_lna_gain = -1;
 static int hf_hpsdr_u_cc_adc_random = -1;
-static int hf_hpsdr_u_cc_hl_adc_agc = -1;
+static int hf_hpsdr_u_cc_hl1_adc_agc = -1;
+static int hf_hpsdr_u_cc_hl2_hw_agc = -1;
 static int hf_hpsdr_u_cc_ant_pre_ant = -1;
 static int hf_hpsdr_u_cc_ant_pre_rx_out = -1;
 static int hf_hpsdr_u_cc_ant_pre_tx_relay = -1;
 static int hf_hpsdr_u_cc_dup = -1;
 static int hf_hpsdr_u_cc_rx_num = -1;
 static int hf_hpsdr_u_cc_mic_ts = -1;
+static int hf_hpsdr_u_cc_hl2_rx_num = -1;
 static int hf_hpsdr_u_cc_com_merc_freq = -1;
 static int hf_hpsdr_u_cc_nco_tx = -1;
 static int hf_hpsdr_u_cc_nco_rx_1 = -1;
@@ -210,7 +230,9 @@ static int hf_hpsdr_u_cc_filter_sub = -1;
 static int hf_hpsdr_u_cc_mic_boost = -1;
 static int hf_hpsdr_u_cc_mic_l = -1;
 static int hf_hpsdr_u_cc_apollo_filter = -1;
+static int hf_hpsdr_u_cc_hl2_ext_ptt = -1;
 static int hf_hpsdr_u_cc_apollo_tunner = -1;
+static int hf_hpsdr_u_cc_hl2_pa = -1;
 static int hf_hpsdr_u_cc_apollo_auto = -1;
 static int hf_hpsdr_u_cc_herm_fil_s = -1;
 static int hf_hpsdr_u_cc_filter_man = -1;
@@ -251,8 +273,10 @@ static int hf_hpsdr_u_cc_metis_p4 = -1;
 static int hf_hpsdr_u_cc_ep2_c4_14 = -1;
 static int hf_hpsdr_u_cc_merc_tx_atten_c3 = -1;
 static int hf_hpsdr_u_cc_adc1_rx_atten = -1;
-static int hf_hpsdr_u_cc_hl_preamp = -1;
+static int hf_hpsdr_u_cc_hl1_preamp = -1;
+static int hf_hpsdr_u_cc_hl2_lna_gain_en = -1;
 static int hf_hpsdr_u_cc_herm_angelia_atten = -1;
+static int hf_hpsdr_u_cc_hl2_lna_gain = -1;
 static int hf_hpsdr_u_cc_ep2_c1_16 = -1;
 static int hf_hpsdr_u_cc_adc2_rx_atten = -1;
 static int hf_hpsdr_u_cc_adc2_en = -1;
@@ -280,6 +304,44 @@ static int hf_hpsdr_u_cc_cw_hang_time = -1;
 static int hf_hpsdr_u_cc_cw_sidetone_freq = -1;
 static int hf_hpsdr_u_cc_pwm_min = -1;
 static int hf_hpsdr_u_cc_pwm_max = -1;
+static int hf_hpsdr_u_cc_a2_c1_0 = -1;
+static int hf_hpsdr_u_cc_a2_c1_1 = -1;
+static int hf_hpsdr_u_cc_a2_c1_2 = -1;
+static int hf_hpsdr_u_cc_a2_c1_3 = -1;
+static int hf_hpsdr_u_cc_a2_c1_4 = -1;
+static int hf_hpsdr_u_cc_a2_c1_5 = -1;
+static int hf_hpsdr_u_cc_a2_c1_6 = -1;
+static int hf_hpsdr_u_cc_a2_c1_7 = -1;
+static int hf_hpsdr_u_cc_a2_c2_0 = -1;
+static int hf_hpsdr_u_cc_a2_c2_1 = -1;
+static int hf_hpsdr_u_cc_a2_c2_2 = -1;
+static int hf_hpsdr_u_cc_a2_c2_3 = -1;
+static int hf_hpsdr_u_cc_a2_c2_4 = -1;
+static int hf_hpsdr_u_cc_a2_c2_5 = -1;
+static int hf_hpsdr_u_cc_a2_c2_6 = -1;
+static int hf_hpsdr_u_cc_a2_c2_7 = -1;
+static int hf_hpsdr_u_cc_feg = -1;
+static int hf_hpsdr_u_cc_hl2_nco_rx_8 = -1;
+static int hf_hpsdr_u_cc_hl2_nco_rx_9 = -1;
+static int hf_hpsdr_u_cc_hl2_nco_rx_10 = -1;
+static int hf_hpsdr_u_cc_hl2_nco_rx_11 = -1;
+static int hf_hpsdr_u_cc_hl2_nco_rx_12 = -1;
+static int hf_hpsdr_u_cc_hl2_pred_sub_idx = -1;
+static int hf_hpsdr_u_cc_hl2_pred = -1;
+static int hf_hpsdr_u_cc_hl2_spi_cookie = -1;
+static int hf_hpsdr_u_cc_hl2_spi_addr = -1;
+static int hf_hpsdr_u_cc_hl2_spi_data = -1;
+static int hf_hpsdr_u_cc_hl2_i2c1_cookie = -1;
+static int hf_hpsdr_u_cc_hl2_i2c1_stop = -1;
+static int hf_hpsdr_u_cc_hl2_i2c1_addr = -1;
+static int hf_hpsdr_u_cc_hl2_i2c1_con = -1;
+static int hf_hpsdr_u_cc_hl2_i2c1_data = -1;
+static int hf_hpsdr_u_cc_hl2_i2c2_cookie = -1;
+static int hf_hpsdr_u_cc_hl2_i2c2_stop = -1;
+static int hf_hpsdr_u_cc_hl2_i2c2_addr = -1;
+static int hf_hpsdr_u_cc_hl2_i2c2_con = -1;
+static int hf_hpsdr_u_cc_hl2_i2c2_data = -1;
+static int hf_hpsdr_u_cc_hl2_ewd = -1;
 static int hf_hpsdr_u_ep2_data_sub_1 = -1;
 static int hf_hpsdr_u_ep2_data_sub_2 = -1;
 static int hf_hpsdr_u_ep2_idx = -1;
@@ -301,6 +363,7 @@ static int hf_hpsdr_u_ep6_ml = -1;
 static int hf_hpsdr_u_ep6_data_string_end = -1;
 static int hf_hpsdr_u_ep6_data_pad = -1;
 
+
 // Expert Items
 static expert_field ei_ep2_sync = EI_INIT;
 static expert_field ei_extra_length = EI_INIT;
@@ -309,7 +372,8 @@ static expert_field ei_extra_length = EI_INIT;
 static gboolean hpsdr_u_pref_strict_size  = TRUE;
 static gboolean hpsdr_u_pref_strict_pad = TRUE;
 static gboolean hpsdr_u_pref_ep2_sync = TRUE;
-static gboolean hpsdr_u_pref_hermes_lite_cc = FALSE;
+static gboolean hpsdr_u_pref_hermes_lite_1_cc = FALSE;
+static gboolean hpsdr_u_pref_hermes_lite_2 = FALSE;
 
 static guint8 board_id = -1;
 
@@ -476,6 +540,10 @@ static const true_false_string ha_a_enabled_disabled = {
    "Disabled - Preamp On/Off Bit is Used"
 };
 
+static const true_false_string enabled_disabled = {
+   "Enabled",
+   "Disabled"
+};
 static const true_false_string adc_enabled_disabled = {
    "Enabled",
    "Disabled - Attenuation is 0dB"
@@ -486,10 +554,21 @@ static const true_false_string internal_external = {
    "External"
 };
 
-static const true_false_string hl_lna_gain = {
+static const true_false_string hl1_lna_gain = {
    "+0 dB",     // when true  (1)
    "+32 dB"     // when false (0)
 };
+
+static const true_false_string hl2_vna_gain = {
+   "+6dB",     // when true  (1)
+   "-6dB"  // when false (0)
+};
+
+static const true_false_string hl2_stop_continue = {
+   "Stop",     // when true  (1)
+   "Continue"        // when false (0)
+};
+
 
 // The Windows build env does not like to pull in stuff
 // from other DLL. The next five true_false_strings duplicate
@@ -652,15 +731,65 @@ proto_register_hpsdr_u(void)
           FT_BOOLEAN, BOOLEAN_MASK,
           TFS(&local_active_inactive), SDR_C0_DOT,
           NULL, HFILL }},
-      { &hf_hpsdr_u_c0_type_1,
-        { "C0 Type", "hpsdr-u.cc0.type_1",
+      { &hf_hpsdr_u_c0_hl2_rqst_1,
+        { "HL2 RQST", "hpsdr-u.cc0.hl2-rsqt_1",
           FT_BOOLEAN, BOOLEAN_MASK,
-          TFS(&blank_blank), SDR_C0_TYPE,
+          NULL, BOOLEAN_B7,
           NULL, HFILL }},
-      { &hf_hpsdr_u_c0_type_2,
-        { "C0 Type", "hpsdr-u.cc0.type_2",
+      { &hf_hpsdr_u_c0_hl2_rqst_2,
+        { "HL2 RQST", "hpsdr-u.cc0.hl2-rsqt_2",
           FT_BOOLEAN, BOOLEAN_MASK,
-          TFS(&blank_blank), SDR_C0_TYPE,
+          NULL, BOOLEAN_B7,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_c0_hl2_ack_1,
+        { "HL2 ACK", "hpsdr-u.cc0.hl2-ack_1",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          NULL, BOOLEAN_B7,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_c0_hl2_ack_2,
+        { "HL2 ACK", "hpsdr-u.cc0.hl2-ack_2",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          NULL, BOOLEAN_B7,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_c0_type_ep2_1,
+        { "C0 Type", "hpsdr-u.cc0.type_ep2_1",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          TFS(&blank_blank), 0xFE,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_c0_type_ep2_2,
+        { "C0 Type", "hpsdr-u.cc0.type_ep2_2",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          TFS(&blank_blank), 0xFE,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_c0_type_ep2_hl2_1,
+        { "HL2 - C0 Type", "hpsdr-u.cc0.type_ep2_hl2_1",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          TFS(&blank_blank), 0x7E,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_c0_type_ep2_hl2_2,
+        { "HL2 - C0 Type", "hpsdr-u.cc0.type_ep2_hl2_2",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          TFS(&blank_blank), 0x7E,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_c0_type_ep6_1,
+        { "C0 Type", "hpsdr-u.cc0.type_ep6_1",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          TFS(&blank_blank), 0xF8,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_c0_type_ep6_2,
+        { "C0 Type", "hpsdr-u.cc0.type_ep6_2",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          TFS(&blank_blank), 0XF8,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_c0_type_ep6_hl2_1,
+        { "HL2 - C0 Type", "hpsdr-u.cc0.type_ep6_hl2_1",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          TFS(&blank_blank), 0x7E,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_c0_type_ep6_hl2_2,
+        { "HL2 - C0 Type", "hpsdr-u.cc0.type_ep6_hl2_2",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          TFS(&blank_blank), 0x7E,
           NULL, HFILL }},
       { &hf_hpsdr_u_cc_fwdpw_sub,
         { "Forward Power subtree", "hpsdr-u.cc.fwdpw.sub",
@@ -842,13 +971,13 @@ proto_register_hpsdr_u(void)
           FT_BOOLEAN, BOOLEAN_MASK,
           TFS(&local_active_inactive), HOST_C0_MOX,
           NULL, HFILL }},
-      { &hf_hpsdr_u_c0_hl_ptt_1,
-        { "    PTT", "hpsdr-u.c0.hl-ptt_1",
+      { &hf_hpsdr_u_c0_hl1_ptt_1,
+        { "HL1 PTT", "hpsdr-u.c0.hl1-ptt_1",
           FT_BOOLEAN, BOOLEAN_MASK,
           TFS(&local_active_inactive), HOST_C0_MOX,
           NULL, HFILL }},
-      { &hf_hpsdr_u_c0_hl_ptt_2,
-        { "    PTT", "hpsdr-u.c0.hl-ptt_2",
+      { &hf_hpsdr_u_c0_hl1_ptt_2,
+        { "HL1 PTT", "hpsdr-u.c0.hl1-ptt_2",
           FT_BOOLEAN, BOOLEAN_MASK,
           TFS(&local_active_inactive), HOST_C0_MOX,
           NULL, HFILL }},
@@ -916,6 +1045,11 @@ proto_register_hpsdr_u(void)
         { "C&C Byte 4", "hpsdr-u.cc.cc4_2",
           FT_UINT8, BASE_HEX,
           NULL, ALL_BITS_MASK,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_conf_c3_c4,
+        { "C&C Byte 3 and 4", "hpsdr-u.cc.cc3_cc4",
+          FT_UINT16, BASE_HEX,
+          NULL, BIT16_MASK,
           NULL, HFILL }},
       { &hf_hpsdr_u_cc_conf_sub_2,
         { "USB EP2 C0 Config data subtree", "hpsdr-u.cc.sub_2",
@@ -997,23 +1131,33 @@ proto_register_hpsdr_u(void)
           FT_BOOLEAN, BOOLEAN_MASK,
           TFS(&local_on_off), HOST_C3_PREAM,
           NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_vna_gain,
+        { "          HL2 - VNA Fixed Gain", "hpsdr-u.cc.ant-pre-pre_amp",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          TFS(&hl2_vna_gain), HOST_C3_PREAM,
+          NULL, HFILL }},
       { &hf_hpsdr_u_cc_adc_dither,
         { "                     IF Dither", "hpsdr-u.cc.adc-dither",
           FT_BOOLEAN, BOOLEAN_MASK,
           TFS(&local_on_off), HOST_C3_IFDIT,
           NULL, HFILL }},
-      { &hf_hpsdr_u_cc_hl_rx_lna_gain,
-        { "                   RX LNA Gain", "hpsdr-u.cc.hl-lna-gain",
+      { &hf_hpsdr_u_cc_hl1_rx_lna_gain,
+        { "             HL1 - RX LNA Gain", "hpsdr-u.cc.hl1-lna-gain",
           FT_BOOLEAN, BOOLEAN_MASK,
-          TFS(&hl_lna_gain), HOST_C3_IFDIT,
+          TFS(&hl1_lna_gain), HOST_C3_IFDIT,
           NULL, HFILL }},
       { &hf_hpsdr_u_cc_adc_random,
         { "                     IF Random", "hpsdr-u.cc.adc-random",
           FT_BOOLEAN, BOOLEAN_MASK,
           TFS(&local_on_off), HOST_C3_IFRAD,
           NULL, HFILL }},
-      { &hf_hpsdr_u_cc_hl_adc_agc,
-        { "                   RX ADC  AGC", "hpsdr-u.cc.hl-adc-agc",
+      { &hf_hpsdr_u_cc_hl1_adc_agc,
+        { "             HL1 - RX ADC AGC ", "hpsdr-u.cc.hl1-adc-agc",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          TFS(&local_on_off), HOST_C3_IFRAD,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_hw_agc,
+        { "          HL2 -   Hardware AGC", "hpsdr-u.cc.hl2-hw-agc",
           FT_BOOLEAN, BOOLEAN_MASK,
           TFS(&local_on_off), HOST_C3_IFRAD,
           NULL, HFILL }},
@@ -1046,6 +1190,11 @@ proto_register_hpsdr_u(void)
         { "  Mic Time Stamping", "hpsdr-u.cc.mic-ts",
           FT_BOOLEAN, BOOLEAN_MASK,
           TFS(&local_on_off), HOST_C4_T_ST,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_rx_num,
+        { "HL2 Number of Receivers", "hpsdr-u.cc.rx-num",
+          FT_UINT8, BASE_HEX,
+          NULL, HOST_C4_HL2_RX_NU,
           NULL, HFILL }},
       { &hf_hpsdr_u_cc_com_merc_freq,
         { "Common Mercury Freq", "hpsdr-u.cc.com-merc-freq",
@@ -1138,7 +1287,7 @@ proto_register_hpsdr_u(void)
           NULL, ZERO_MASK,
           NULL, HFILL }},
       { &hf_hpsdr_u_cc_nco_rx_7,
-        { "RX 7 NCO Frequency", "hpsdr-u.cc.nco-x-7",
+        { "RX 7 NCO Frequency", "hpsdr-u.cc.nco-rx-7",
           FT_UINT32, BASE_DEC,
           NULL, ZERO_MASK,
           NULL, HFILL }},
@@ -1167,10 +1316,20 @@ proto_register_hpsdr_u(void)
           FT_BOOLEAN, BOOLEAN_MASK,
           TFS(&local_enabled_disabled), HOST_C2_E_T_F,
           NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_ext_ptt,
+        { "       HL2 - External PTT", "hpsdr-u.cc.hl2-ext-ptt",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          TFS(&local_on_off), HOST_C2_E_T_F,
+          NULL, HFILL }},
       { &hf_hpsdr_u_cc_apollo_tunner,
         { "    Hermes - Apollo Tuner", "hpsdr-u.cc.apollo-tunner",
           FT_BOOLEAN, BOOLEAN_MASK,
           TFS(&local_enabled_disabled), HOST_C2_EN_TU,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_pa,
+        { "         HL2 - Onboard PA", "hpsdr-u.cc.hl2-ap",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          TFS(&local_on_off), HOST_C2_EN_TU,
           NULL, HFILL }},
       { &hf_hpsdr_u_cc_apollo_auto,
         { "Hermes - Apollo Auto Tune", "hpsdr-u.cc.apollo.auto",
@@ -1372,15 +1531,25 @@ proto_register_hpsdr_u(void)
           FT_UINT8, BASE_DEC,
           NULL, HOST_C4_A1_A,
           NULL, HFILL }},
-      { &hf_hpsdr_u_cc_hl_preamp,
-        { "         Hermes-Lite Preamp", "hpsdr-u.cc.hl-preamp",
+      { &hf_hpsdr_u_cc_hl1_preamp,
+        { "               HL1 - Preamp", "hpsdr-u.cc.hl1-preamp",
           FT_UINT8, BASE_DEC,
-          NULL, HOST_C4_A1_A,
+          NULL, 0X1F,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_lna_gain,
+        { "HL2 - LNA Gain Level", "hpsdr-u.cc.hl2-lna-gain",
+          FT_UINT8, BASE_DEC,
+          NULL, 0X1F,
           NULL, HFILL }},
       { &hf_hpsdr_u_cc_herm_angelia_atten,
         { "Hermes / Angelia Attenuator", "hpsdr-u.cc.herm_angelia-atten",
           FT_BOOLEAN, BOOLEAN_MASK,
           TFS(&ha_a_enabled_disabled), HOST_C4_HA_A,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_lna_gain_en,
+        { "HL2 - LNA Gain      ", "hpsdr-u.cc.hl2-lna-gain-en",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          TFS(&enabled_disabled), HOST_C4_HA_A,
           NULL, HFILL }},
       { &hf_hpsdr_u_cc_ep2_c1_16,
         { "C&C Byte 1", "hpsdr-u.cc.ep2.c1.16",
@@ -1517,6 +1686,196 @@ proto_register_hpsdr_u(void)
           FT_UINT16, BASE_DEC,
           NULL, HOST_2_22,
           NULL, HFILL }},
+      { &hf_hpsdr_u_cc_a2_c1_0,
+        { "BIT 0", "hpsdr-u.cc.a2-c1-0",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          NULL, BOOLEAN_B0,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_a2_c1_1,
+        { "BIT 1", "hpsdr-u.cc.a2-c1-1",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          NULL, BOOLEAN_B1,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_a2_c1_2,
+        { "BIT 2", "hpsdr-u.cc.a2-c1-2",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          NULL, BOOLEAN_B2,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_a2_c1_3,
+        { "BIT 3", "hpsdr-u.cc.a2-c1-3",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          NULL, BOOLEAN_B3,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_a2_c1_4,
+        { "BIT 4", "hpsdr-u.cc.a2-c1-4",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          NULL, BOOLEAN_B4,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_a2_c1_5,
+        { "BIT 5", "hpsdr-u.cc.a2-c1-5",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          NULL, BOOLEAN_B5,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_a2_c1_6,
+        { "BIT 6", "hpsdr-u.cc.a2-c1-6",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          NULL, BOOLEAN_B6,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_a2_c1_7,
+        { "BIT 7", "hpsdr-u.cc.a2-c1-7",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          NULL, BOOLEAN_B7,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_a2_c2_0,
+        { "BIT 0", "hpsdr-u.cc.a2-c2-0",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          NULL, BOOLEAN_B0,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_a2_c2_1,
+        { "BIT 1", "hpsdr-u.cc.a2-c2-1",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          NULL, BOOLEAN_B1,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_a2_c2_2,
+        { "BIT 2", "hpsdr-u.cc.a2-c2-2",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          NULL, BOOLEAN_B2,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_a2_c2_3,
+        { "BIT 3", "hpsdr-u.cc.a2-c2-3",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          NULL, BOOLEAN_B3,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_a2_c2_4,
+        { "BIT 4", "hpsdr-u.cc.a2-c2-4",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          NULL, BOOLEAN_B4,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_a2_c2_5,
+        { "BIT 5", "hpsdr-u.cc.a2-c2-5",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          NULL, BOOLEAN_B5,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_a2_c2_6,
+        { "BIT 6", "hpsdr-u.cc.a2-c2-6",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          NULL, BOOLEAN_B6,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_a2_c2_7,
+        { "BIT 7", "hpsdr-u.cc.a2-c2-7",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          NULL, BOOLEAN_B7,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_feg,
+        { "Firmware Envelope Gain", "hpsdr-u.cc.feg",
+          FT_UINT16, BASE_DEC,
+          NULL, ZERO_MASK,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_nco_rx_8,
+        { "HL2 - RX 8 NCO Frequency", "hpsdr-u.cc.hl2-nco-rx-8",
+          FT_UINT32, BASE_DEC,
+          NULL, ZERO_MASK,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_nco_rx_9,
+        { "HL2 - RX 9 NCO Frequency", "hpsdr-u.cc.hl2-nco-rx-9",
+          FT_UINT32, BASE_DEC,
+          NULL, ZERO_MASK,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_nco_rx_10,
+        { "HL2 - RX 10 NCO Frequency", "hpsdr-u.cc.hl2-nco-rx-10",
+          FT_UINT32, BASE_DEC,
+          NULL, ZERO_MASK,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_nco_rx_11,
+        { "HL2 - RX 11 NCO Frequency", "hpsdr-u.cc.hl2-nco-rx-11",
+          FT_UINT32, BASE_DEC,
+          NULL, ZERO_MASK,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_nco_rx_12,
+        { "HL2 - RX 8 NCO Frequency", "hpsdr-u.cc.hl2-nco-rx-12",
+          FT_UINT32, BASE_DEC,
+          NULL, ZERO_MASK,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_pred_sub_idx,
+        { "HL2 - Predistortion Subindex", "hpsdr-u.cc.hl2-pred-subidx",
+          FT_UINT8, BASE_HEX,
+          NULL, ALL_BITS_MASK,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_pred,
+        { "HL2 -          Predistortion", "hpsdr-u.cc.hl2-pred",
+          FT_UINT8, BASE_HEX,
+          NULL, 0x0F,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_spi_cookie,
+        { "HL2 - SPI  Cookie", "hpsdr-u.cc.hl2-spi-cookie",
+          FT_UINT8, BASE_HEX,
+          NULL, ALL_BITS_MASK,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_spi_addr,
+        { "HL2 - SPI Address", "hpsdr-u.cc.hl2-spi-addr",
+          FT_UINT8, BASE_HEX,
+          NULL, 0x1F,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_spi_data,
+        { "HL2 - SPI    Data", "hpsdr-u.cc.hl2-spi-data",
+          FT_UINT8, BASE_HEX,
+          NULL, ALL_BITS_MASK,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_i2c1_cookie,
+        { "HL2 - i2c-1  Cookie", "hpsdr-u.cc.hl2-i2c1-cookie",
+          FT_UINT8, BASE_HEX,
+          NULL, ALL_BITS_MASK,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_i2c1_stop,
+        { "HL2 - i2c-1    Stop", "hpsdr-u.cc.hl2-i2c1-stop",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          TFS(&hl2_stop_continue), 0x80,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_i2c1_addr,
+        { "HL2 - i2c-1 Address", "hpsdr-u.cc.hl2-i2c1-addr",
+          FT_UINT8, BASE_HEX,
+          NULL, 0x7F,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_i2c1_con,
+        { "HL2 - i2c-1 Control", "hpsdr-u.cc.hl2-i2c1-con",
+          FT_UINT8, BASE_HEX,
+          NULL, ALL_BITS_MASK,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_i2c1_data,
+        { "HL2 - i2c-1    Data", "hpsdr-u.cc.hl2-i2c1-data",
+          FT_UINT8, BASE_HEX,
+          NULL, ALL_BITS_MASK,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_i2c2_cookie,
+        { "HL2 - i2c-2  Cookie", "hpsdr-u.cc.hl2-i2c2-cookie",
+          FT_UINT8, BASE_HEX,
+          NULL, ALL_BITS_MASK,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_i2c2_stop,
+        { "HL2 - i2c-2    Stop", "hpsdr-u.cc.hl2-i2c2-stop",
+          FT_BOOLEAN, BOOLEAN_MASK,
+          TFS(&hl2_stop_continue), 0x80,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_i2c2_addr,
+        { "HL2 - i2c-2 Address", "hpsdr-u.cc.hl2-i2c2-addr",
+          FT_UINT8, BASE_HEX,
+          NULL, 0x7F,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_i2c2_con,
+        { "HL2 - i2c-2 Control", "hpsdr-u.cc.hl2-i2c2-con",
+          FT_UINT8, BASE_HEX,
+          NULL, ALL_BITS_MASK,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_i2c2_data,
+        { "HL2 - i2c-2    Data", "hpsdr-u.cc.hl2-i2c2-data",
+          FT_UINT8, BASE_HEX,
+          NULL, ALL_BITS_MASK,
+          NULL, HFILL }},
+      { &hf_hpsdr_u_cc_hl2_ewd,
+        { "HL2 - Data", "hpsdr-u.cc.hl2-ewd",
+          FT_UINT32, BASE_DEC,
+          NULL, ZERO_MASK,
+          NULL, HFILL }},
       { &hf_hpsdr_u_ep2_data_sub_1,
         { "USB EP2 Data subtree", "hpsdr-u.ep2.data.sub_1",
           FT_UINT8, BASE_HEX,
@@ -1583,6 +1942,7 @@ proto_register_hpsdr_u(void)
       &ett_hpsdr_u_cc_cw1,
       &ett_hpsdr_u_cc_cw2,
       &ett_hpsdr_u_cc_pwm,
+      &ett_hpsdr_u_cc_a2_feg,
       &ett_hpsdr_u_ep2_data_1,
       &ett_hpsdr_u_ep2_data_2,
       &ett_hpsdr_u_cc_info,
@@ -1643,14 +2003,35 @@ proto_register_hpsdr_u(void)
                                   " extra bytes.",
                                   &hpsdr_u_pref_ep2_sync);
 
-   prefs_register_bool_preference(hpsdr_u_prefs,"hermes_lite_cc",
-                                  "Hermes-Lite Command and Control",
+   prefs_register_bool_preference(hpsdr_u_prefs,"hermes_lite_1_cc",
+                                  "Hermes-Lite1 Command and Control",
                                   "- MOX repurposed as PTT.\n"
                                   "- Random toggles RX ADC AGC.\n"
                                   "- Dither toggles RX LNA gain.\n"
                                   "- Input attenuator used for preamp.",
-                                  &hpsdr_u_pref_hermes_lite_cc);
+                                  &hpsdr_u_pref_hermes_lite_1_cc);
 
+   prefs_register_bool_preference(hpsdr_u_prefs,"hermes_lite_2",
+                                  "Hermes-Lite2 Protocol",
+                                  "- Bit 7 of C&C Byte 0: RQST, ACK.\n"
+                                  " -- ACK HIGH:\n"
+                                  " --- Removes Dot and Dash.\n"
+                                  " --- EP6 C0 type is 6 bits.\n"
+                                  "- Random toggles Hardware AGC.\n"
+                                  "- Preamp toggles VNA fixed RX Gain.\n"
+                                  "- Time stamp added to number of recevers.\n"
+                                  "- Apollo filter toggles external PTT.\n"
+                                  "- Apollo tunner toggles onboard PA.\n"
+                                  "- Attenuator toggles LNA Gain.\n"
+                                  "- ADC Input attenuator used for LNA Gain.\n"
+                                  "- Addtional C0 types for:\n"
+                                  "-- RX 8 (Conflicts with 2ND Alex, Firmware Envelope Gain)\n"
+                                  "-- RX 9 to 12\n"
+                                  "-- Predistortion\n"
+                                  "-- AD9866 SPI\n"
+                                  "-- I2C\n"
+                                  "-- Extended Write Data",
+                                  &hpsdr_u_pref_hermes_lite_2);
 }
 
 gint packet_end_pad(tvbuff_t *tvb, proto_tree *tree, gint offset, gint size)
@@ -1705,6 +2086,7 @@ static int hpsdr_usb_ep2_frame(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
    proto_item *cc_cw1_item = NULL;
    proto_item *cc_cw2_item = NULL;
    proto_item *cc_pwm_item = NULL;
+   proto_item *cc_a2_feg_item = NULL;
    proto_item *ep2_data_item = NULL;
 
    proto_item *ei_sync_item = NULL;
@@ -1719,6 +2101,7 @@ static int hpsdr_usb_ep2_frame(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
    proto_tree *hpsdr_u_tree_cc_cw1 = NULL;
    proto_tree *hpsdr_u_tree_cc_cw2 = NULL;
    proto_tree *hpsdr_u_tree_cc_pwm = NULL;
+   proto_tree *hpsdr_u_tree_cc_a2_feg = NULL;
    proto_tree *hpsdr_u_tree_ep2_data = NULL;
 
    guint8 C0 = -1;
@@ -1739,11 +2122,14 @@ static int hpsdr_usb_ep2_frame(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
    int *c0_sub = NULL;
    int *u_c0 = NULL;
    int *c0_mox = NULL;
+   int *c0_hl2_rqst = NULL;
    int *c0_type = NULL;
+   int *c0_type_hl2 = NULL;
    int *cc_conf_c1 = NULL;
    int *cc_conf_c2 = NULL;
    int *cc_conf_c3 = NULL;
    int *cc_conf_c4 = NULL;
+   int *cc_conf_c3_c4 = NULL;
    int *cc_conf_sub = NULL;
    int *ett_ep2_data = NULL;
    int *ep2_data_sub = NULL;
@@ -1759,21 +2145,27 @@ static int hpsdr_usb_ep2_frame(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
       c0_sub = &hf_hpsdr_u_c0_sub_1;
       u_c0 = &hf_hpsdr_u_c0_1;
 
-      // When hpsdr_u_pref_hermes_lite_cc is true.
+      // When hpsdr_u_pref_hermes_lite_1_cc is true.
       // Replace MOX with PTT
-      if ( !( hpsdr_u_pref_hermes_lite_cc )) {
+      if ( !( hpsdr_u_pref_hermes_lite_1_cc )) {
          c0_mox = &hf_hpsdr_u_c0_mox_1;
       } else {
-         c0_mox = &hf_hpsdr_u_c0_hl_ptt_1;
+         c0_mox = &hf_hpsdr_u_c0_hl1_ptt_1;
       }
 
-      c0_type = &hf_hpsdr_u_c0_type_1;
+      if (hpsdr_u_pref_hermes_lite_2) {
+         c0_hl2_rqst = &hf_hpsdr_u_c0_hl2_rqst_1;
+         c0_type_hl2 = &hf_hpsdr_u_c0_type_ep2_hl2_1;
+      }
+
+      c0_type = &hf_hpsdr_u_c0_type_ep2_1;
       ett_ep2_data = &ett_hpsdr_u_ep2_data_1;
       ep2_data_sub = &hf_hpsdr_u_ep2_data_sub_1;
       cc_conf_c1 = &hf_hpsdr_u_cc_conf_c1_1;
       cc_conf_c2 = &hf_hpsdr_u_cc_conf_c2_1;
       cc_conf_c3 = &hf_hpsdr_u_cc_conf_c3_1;
       cc_conf_c4 = &hf_hpsdr_u_cc_conf_c4_1;
+      cc_conf_c3_c4 = &hf_hpsdr_u_cc_conf_c3_c4;
       cc_conf_sub = &hf_hpsdr_u_cc_conf_sub_1;
 
       break;
@@ -1785,19 +2177,25 @@ static int hpsdr_usb_ep2_frame(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
 
       // When hpsdr_u_pref_hermes_lite_cc is true.
       // Replace MOX with PTT
-      if ( !( hpsdr_u_pref_hermes_lite_cc )) {
+      if ( !( hpsdr_u_pref_hermes_lite_1_cc )) {
          c0_mox = &hf_hpsdr_u_c0_mox_2;
       } else {
-         c0_mox = &hf_hpsdr_u_c0_hl_ptt_2;
+         c0_mox = &hf_hpsdr_u_c0_hl1_ptt_2;
       }
 
-      c0_type = &hf_hpsdr_u_c0_type_2;
+      if (hpsdr_u_pref_hermes_lite_2) {
+         c0_hl2_rqst = &hf_hpsdr_u_c0_hl2_rqst_2;
+         c0_type_hl2 = &hf_hpsdr_u_c0_type_ep2_hl2_2;
+      }
+
+      c0_type = &hf_hpsdr_u_c0_type_ep2_2;
       ett_ep2_data = &ett_hpsdr_u_ep2_data_2;
       ep2_data_sub = &hf_hpsdr_u_ep2_data_sub_2;
       cc_conf_c1 = &hf_hpsdr_u_cc_conf_c1_2;
       cc_conf_c2 = &hf_hpsdr_u_cc_conf_c2_2;
       cc_conf_c3 = &hf_hpsdr_u_cc_conf_c3_2;
       cc_conf_c4 = &hf_hpsdr_u_cc_conf_c4_2;
+      cc_conf_c3_c4 = &hf_hpsdr_u_cc_conf_c3_c4;
       cc_conf_sub = &hf_hpsdr_u_cc_conf_sub_2;
       break;
    }
@@ -1819,43 +2217,76 @@ static int hpsdr_usb_ep2_frame(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
    offset += 3;
 
    C0 = tvb_get_guint8(tvb, offset);
+
    c0_item = proto_tree_add_uint_format(tree, *c0_sub, tvb, offset, 1,
                                         C0, "C&C Byte 0  : 0x%02X",C0 );
 
    hpsdr_u_tree_c0 = proto_item_add_subtree(c0_item, ett_hpsdr_u_c0);
 
    proto_tree_add_item(hpsdr_u_tree_c0, *u_c0, tvb,offset, 1, ENC_BIG_ENDIAN);
-   //C0_masked = ( C0 & 0b11111110 ) ; // bitwise and
-   C0_masked = ( C0 & 0xFE );
+
+   // "C0 type" is a 7 bit number.
+   // Right shift to remove the 0 bit. The 0 bit is MOX
+   C0_masked = C0 >> 1;
+
+   // Hermes-Lite2:
+   //   C0 type is a 6 bit number. Mask out the 7th bit with bitwise and.
+   //   Then display RQST.
+   if (hpsdr_u_pref_hermes_lite_2) {
+      C0_masked = ( C0_masked & 0x3F );
+      proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_hl2_rqst, tvb,offset, 1, C0);
+   }
 
    proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_mox, tvb,offset, 1, C0);
-   c0_type_item = proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_type, tvb,offset, 1, C0_masked );
-   proto_item_append_text(c0_type_item," 0x%02X", C0_masked);
+   if (!( hpsdr_u_pref_hermes_lite_2 ) ) {
+      c0_type_item = proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_type, tvb,offset, 1, C0 );
+   } else {
+      c0_type_item = proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_type_hl2, tvb,offset, 1, C0 );
+   }
+
+   proto_item_append_text(c0_type_item,"0x%02X %d", C0_masked, C0_masked);
    offset += 1;
 
-   //00 Configuration
-   //02 TX NCO Frequency
-   //04 RX 1 NCO Frequency
-   //06 RX 2 NCO Frequency
-   //08 RX 3 NCO Frequency
-   //0A RX 4 NCO Frequency
-   //0C RX 5 NCO Frequency
-   //0E RX 6 NCO Frequency
-   //10 RX 7 NCO Frequency
-   //12 TX Drive, Anntena Presect, VNA
-   //14 RX Pre-amp, IF Gain, PureSignal, Open Drain, TTL, 20db/ADC1 Attn
-   //16 ADC[123] Attn, CW Config
-   //18 Additional Mercury 1
-   //1A Additional Mercury 2
-   //1C ADC RX Assignment
-   //1E CW Configuration 2
-   //20 CW Configuration 3
-   //22 PWM Configuration
+   // The "C0 Types" are 7 bit numbers.
+   // Before version 0.4.0 they were in-correctly treated as 8 bit numbers.
+   //  0 0x00 Configuration
+   //  1 0x01 TX NCO Frequency
+   //  2 0x02 RX 1 NCO Frequency
+   //  3 0x03 RX 2 NCO Frequency
+   //  4 0x04 RX 3 NCO Frequency
+   //  5 0x05 RX 4 NCO Frequency
+   //  6 0x06 RX 5 NCO Frequency
+   //  7 0x07 RX 6 NCO Frequency
+   //  8 0x08 RX 7 NCO Frequency
+   //  9 0x09 TX Drive, Anntena Presect, VNA
+   // 10 0x0A RX Pre-amp, IF Gain, PureSignal, Open Drain, TTL, 20db/ADC1 Attn
+   // 11 0x0B ADC[123] Attn, CW Config
+   // 12 0x0C Additional Mercury 1
+   // 13 0x0D Additional Mercury 2
+   // 14 0x0E ADC RX Assignment
+   // 15 0x0F CW Configuration 2
+   // 16 0x10 CW Configuration 3
+   // 17 0x11 PWM Configuration
+   // 18 0x12 2ND Alex, Firmware Envelope Gain
+
+   // Hermes-Lite2 Addtions
+   // - 6 bit numbers because the 7th bit is repurposed for RQST
+   // 18 0x12 HL2 RX 8 NCO Frequency (Conflict with core 0x12 - per 1.60)
+   // 19 0x13 HL2 RX 9 NCO Frequency
+   // 20 0x14 HL2 10 NCO Frequency
+   // 21 0x15 HL2 RX 11 NCO Frequency
+   // 22 0x16 HL2 RX 12 NCO Frequency
+   // 43 0x2B HL2 Predistortion
+   // 59 0x3B AD9866 SPI
+   // 60 0x3C I2C1
+   // 61 0x3D I2C2
+   // 63 0x3F Extended Write Data
 
    if ( C0_masked == 0x0 )  { // Configuration
 
       cc_conf_item = proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
-                                                C0_masked, "C0 Type 0x%02X: SDR Configuration",C0_masked);
+                                                C0_masked, "C0 Type 0x%02X: SDR Configuration (%d)",
+                                                C0_masked, C0_masked);
       hpsdr_u_tree_cc_conf = proto_item_add_subtree(cc_conf_item, ett_hpsdr_u_cc_conf);
 
       C1 = tvb_get_guint8(tvb, offset);
@@ -1885,18 +2316,39 @@ static int hpsdr_usb_ep2_frame(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
       proto_tree_add_item(hpsdr_u_tree_cc_conf, *cc_conf_c3, tvb,offset, 1, ENC_BIG_ENDIAN);
 
       proto_tree_add_item(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_ant_pre_attn,tvb,offset, 1, C3);
-      proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_ant_pre_pre_amp,tvb,offset, 1, C3);
 
-      // When hpsdr_u_pref_hermes_lite_cc is true.
+      if ( !( hpsdr_u_pref_hermes_lite_2 )) {
+         proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_ant_pre_pre_amp,tvb,offset, 1, C3);
+      } else {
+         proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_hl2_vna_gain,tvb,offset, 1, C3);
+      }
+
+      // // When hpsdr_u_pref_hermes_lite_1_cc is true.
+      // // Replace Dither with RX LNA gain.
+      // // Replace Random with RX ADC AGC.
+      // if ( !( hpsdr_u_pref_hermes_lite_1_cc )) {
+      //    proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_adc_dither,tvb,offset, 1, C3);
+      //    proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_adc_random,tvb,offset, 1, C3);
+      // } else {
+      //    proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_hl1_rx_lna_gain,tvb,offset, 1, C3);
+      //    proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_hl1_adc_agc,tvb,offset, 1, C3);
+      // }
+
+      // When hpsdr_u_pref_hermes_lite_1_cc is true.
       // Replace Dither with RX LNA gain.
       // Replace Random with RX ADC AGC.
-      if ( !( hpsdr_u_pref_hermes_lite_cc )) {
+      if ( hpsdr_u_pref_hermes_lite_1_cc ) {
+         proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_hl1_rx_lna_gain,tvb,offset, 1, C3);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_hl1_adc_agc,tvb,offset, 1, C3);
+      } else if (hpsdr_u_pref_hermes_lite_2 ) {
+         proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_adc_dither,tvb,offset, 1, C3);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_hl2_hw_agc,tvb,offset, 1, C3);
+
+      } else {
          proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_adc_dither,tvb,offset, 1, C3);
          proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_adc_random,tvb,offset, 1, C3);
-      } else {
-         proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_hl_rx_lna_gain,tvb,offset, 1, C3);
-         proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_hl_adc_agc,tvb,offset, 1, C3);
       }
+
 
       proto_tree_add_item(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_ant_pre_ant,tvb,offset, 1, C3);
       proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_ant_pre_rx_out,tvb,offset, 1, C3);
@@ -1916,85 +2368,100 @@ static int hpsdr_usb_ep2_frame(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
       proto_tree_add_item(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_ant_pre_tx_relay,tvb,offset, 1, C4);
       proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_dup,tvb,offset, 1, C4);
 
-      append_text_item = proto_tree_add_item(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_rx_num,tvb,offset, 1, C4);
-      proto_item_append_text(append_text_item," : %d RX", rx_num );
+      if (!hpsdr_u_pref_hermes_lite_2) {
+         append_text_item = proto_tree_add_item(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_rx_num,tvb,offset, 1, C4);
+         proto_item_append_text(append_text_item," : %d RX", rx_num );
 
-      append_text_item = proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_mic_ts,tvb,offset, 1, C4);
-      proto_item_append_text(append_text_item," : 1PPS on LBS of MIC Data");
+         append_text_item = proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_mic_ts,tvb,offset, 1, C4);
+         proto_item_append_text(append_text_item," : 1PPS on LBS of MIC Data");
+
+      } else {
+         append_text_item = proto_tree_add_item(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_hl2_rx_num,tvb,offset, 1, C4);
+         proto_item_append_text(append_text_item," : %d RX", rx_num );
+      }
 
       append_text_item = proto_tree_add_boolean(hpsdr_u_tree_cc_conf, hf_hpsdr_u_cc_com_merc_freq,tvb,offset, 1, C4);
       proto_item_append_text(append_text_item," : Used with Multi Mercury");
 
       offset += 1;
 
-   } else if ( C0_masked == 0x02 ) { // TX NCO Frequency
+   } else if ( C0_masked == 0x01 ) { // TX NCO Frequency
 
       proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
-                                 C0_masked, "C0 Type 0x%02X: TX NCO Frequency",C0_masked);
+                                 C0_masked, "C0 Type 0x%02X: TX NCO Frequency (%d)",
+                                 C0_masked, C0_masked);
       append_text_item =  proto_tree_add_item(tree, hf_hpsdr_u_cc_nco_tx,tvb,offset, 4, ENC_BIG_ENDIAN);
       proto_item_append_text(append_text_item," Hz");
       offset += 4;
 
-   } else if ( C0_masked == 0x04 ) { // RX 1 NCO Frequency
+   } else if ( C0_masked == 0x02 ) { // RX 1 NCO Frequency
 
       proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
-                                 C0_masked, "C0 Type 0x%02X: RX 1 NCO Frequency",C0_masked);
+                                 C0_masked, "C0 Type 0x%02X: RX 1 NCO Frequency (%d)",
+                                 C0_masked, C0_masked);
       append_text_item =  proto_tree_add_item(tree, hf_hpsdr_u_cc_nco_rx_1,tvb,offset, 4, ENC_BIG_ENDIAN);
       proto_item_append_text(append_text_item," Hz");
       offset += 4;
 
-   } else if ( C0_masked == 0x06 ) { // RX 2 NCO Frequency
+   } else if ( C0_masked == 0x03 ) { // RX 2 NCO Frequency
 
       proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
-                                 C0_masked, "C0 Type 0x%02X: RX 2 NCO Frequency",C0_masked);
+                                 C0_masked, "C0 Type 0x%02X: RX 2 NCO Frequency (%d)",
+                                 C0_masked, C0_masked);
       append_text_item =  proto_tree_add_item(tree, hf_hpsdr_u_cc_nco_rx_2,tvb,offset, 4, ENC_BIG_ENDIAN);
       proto_item_append_text(append_text_item," Hz");
       offset += 4;
 
-   } else if ( C0_masked == 0x08 ) { // RX 3 NCO Frequency
+   } else if ( C0_masked == 0x04 ) { // RX 3 NCO Frequency
 
       proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
-                                 C0_masked, "C0 Type 0x%02X: RX 3 NCO Frequency",C0_masked);
+                                 C0_masked, "C0 Type 0x%02X: RX 3 NCO Frequency (%d)",
+                                 C0_masked, C0_masked);
       append_text_item =  proto_tree_add_item(tree, hf_hpsdr_u_cc_nco_rx_3,tvb,offset, 4, ENC_BIG_ENDIAN);
       proto_item_append_text(append_text_item," Hz");
       offset += 4;
 
-   } else if ( C0_masked == 0x0A ) { // RX 4 NCO Frequency
+   } else if ( C0_masked == 0x05 ) { // RX 4 NCO Frequency
 
       proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
-                                 C0_masked, "C0 Type 0x%02X: RX 4 NCO Frequency",C0_masked);
+                                 C0_masked, "C0 Type 0x%02X: RX 4 NCO Frequency (%d)",
+                                 C0_masked, C0_masked);
       append_text_item =  proto_tree_add_item(tree, hf_hpsdr_u_cc_nco_rx_4,tvb,offset, 4, ENC_BIG_ENDIAN);
       proto_item_append_text(append_text_item," Hz");
       offset += 4;
 
-   } else if ( C0_masked == 0x0C ) { // RX 5 NCO Frequency
+   } else if ( C0_masked == 0x06 ) { // RX 5 NCO Frequency
 
       proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
-                                 C0_masked, "C0 Type 0x%02X: RX 5 NCO Frequency",C0_masked);
+                                 C0_masked, "C0 Type 0x%02X: RX 5 NCO Frequency (%d)",
+                                 C0_masked, C0_masked);
       append_text_item =  proto_tree_add_item(tree, hf_hpsdr_u_cc_nco_rx_5,tvb,offset, 4, ENC_BIG_ENDIAN);
       proto_item_append_text(append_text_item," Hz");
       offset += 4;
 
-   } else if ( C0_masked == 0x0E ) { // RX 6 NCO Frequency
+   } else if ( C0_masked == 0x07 ) { // RX 6 NCO Frequency
 
       proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
-                                 C0_masked, "C0 Type 0x%02X: RX 6 NCO Frequency",C0_masked);
+                                 C0_masked, "C0 Type 0x%02X: RX 6 NCO Frequency (%d)",
+                                 C0_masked, C0_masked);
       append_text_item =  proto_tree_add_item(tree, hf_hpsdr_u_cc_nco_rx_6,tvb,offset, 4, ENC_BIG_ENDIAN);
       proto_item_append_text(append_text_item," Hz");
       offset += 4;
 
-   } else if ( C0_masked == 0x10 ) { // RX 7 NCO Frequency
+   } else if ( C0_masked == 0x08 ) { // RX 7 NCO Frequency
 
       proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
-                                 C0_masked, "C0 Type 0x%02X: RX 7 NCO Frequency",C0_masked);
+                                 C0_masked, "C0 Type 0x%02X: RX 7 NCO Frequency (%d)",
+                                 C0_masked, C0_masked);
       append_text_item =  proto_tree_add_item(tree, hf_hpsdr_u_cc_nco_rx_7,tvb,offset, 4, ENC_BIG_ENDIAN);
       proto_item_append_text(append_text_item," Hz");
       offset += 4;
 
-   } else if ( C0_masked == 0x12 ) { // TX Drive, Anntena Presect, VNA
+   } else if ( C0_masked == 0x09 ) { // TX Drive, Anntena Presect, VNA
 
       proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
-                                 C0_masked, "C0 Type 0x%02X: TX Drive, HPF and LPF, VNA",C0_masked);
+                                 C0_masked, "C0 Type 0x%02X: TX Drive, HPF and LPF, VNA (%d)",
+                                 C0_masked, C0_masked);
 
       proto_tree_add_item(tree,hf_hpsdr_u_cc_tx_drive,tvb,offset, 1, ENC_BIG_ENDIAN);
       offset += 1;
@@ -2008,8 +2475,13 @@ static int hpsdr_usb_ep2_frame(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
 
       proto_tree_add_boolean(hpsdr_u_tree_cc_filter, hf_hpsdr_u_cc_mic_boost,tvb,offset, 1, C2);
       proto_tree_add_boolean(hpsdr_u_tree_cc_filter, hf_hpsdr_u_cc_mic_l,tvb,offset, 1, C2);
-      proto_tree_add_boolean(hpsdr_u_tree_cc_filter, hf_hpsdr_u_cc_apollo_filter,tvb,offset, 1, C2);
-      proto_tree_add_boolean(hpsdr_u_tree_cc_filter, hf_hpsdr_u_cc_apollo_tunner,tvb,offset, 1, C2);
+      if (!hpsdr_u_pref_hermes_lite_2) {
+         proto_tree_add_boolean(hpsdr_u_tree_cc_filter, hf_hpsdr_u_cc_apollo_filter,tvb,offset, 1, C2);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_filter, hf_hpsdr_u_cc_apollo_tunner,tvb,offset, 1, C2);
+      } else {
+         proto_tree_add_boolean(hpsdr_u_tree_cc_filter, hf_hpsdr_u_cc_hl2_ext_ptt,tvb,offset, 1, C2);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_filter, hf_hpsdr_u_cc_hl2_pa,tvb,offset, 1, C2);
+      }
       proto_tree_add_boolean(hpsdr_u_tree_cc_filter, hf_hpsdr_u_cc_apollo_auto,tvb,offset, 1, C2);
       proto_tree_add_boolean(hpsdr_u_tree_cc_filter, hf_hpsdr_u_cc_herm_fil_s,tvb,offset, 1, C2);
       proto_tree_add_boolean(hpsdr_u_tree_cc_filter, hf_hpsdr_u_cc_filter_man,tvb,offset, 1, C2);
@@ -2041,14 +2513,20 @@ static int hpsdr_usb_ep2_frame(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
       proto_tree_add_boolean(hpsdr_u_tree_cc_filter, hf_hpsdr_u_cc_lpf_17_15,tvb,offset, 1, C4);
       offset += 1;
 
-   } else if ( C0_masked == 0x14 ) { // RX Pre-amp, IF Gain, PureSignal, Open Drain, TTL, 20db/ADC1 Attn
+   } else if ( C0_masked == 0x0A ) { // RX Pre-amp, IF Gain, PureSignal, Open Drain, TTL, 20db/ADC1 Attn
 
-      if ( !( hpsdr_u_pref_hermes_lite_cc )) {
+      if ( hpsdr_u_pref_hermes_lite_1_cc ) {
          cc_misc_item = proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4, C0_masked,
-                                                   "C0 Type 0x%02X: RX Pre-amp, IF Gain, PureSignal, Open Drain, TTL, 20db/ADC1 Attn",C0_masked);
+                                                   "C0 Type 0x%02X: RX Pre-amp, IF Gain, PureSignal, Open Drain, TTL, HL1 Preamp (%d)",
+                                                   C0_masked, C0_masked);
+      } else if ( hpsdr_u_pref_hermes_lite_2 ) {
+         cc_misc_item = proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4, C0_masked,
+                                                   "C0 Type 0x%02X: RX Pre-amp, IF Gain, PureSignal, Open Drain, TTL, HL2 LNA Gain (%d)",
+                                                   C0_masked, C0_masked);
       } else {
          cc_misc_item = proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4, C0_masked,
-                                                   "C0 Type 0x%02X: RX Pre-amp, IF Gain, PureSignal, Open Drain, TTL, HL Preamp",C0_masked);
+                                                   "C0 Type 0x%02X: RX Pre-amp, IF Gain, PureSignal, Open Drain, TTL, 20db/ADC1 Attn (%d)",
+                                                   C0_masked, C0_masked);
       }
 
       hpsdr_u_tree_cc_misc = proto_item_add_subtree(cc_misc_item, ett_hpsdr_u_cc_misc);
@@ -2091,23 +2569,29 @@ static int hpsdr_usb_ep2_frame(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
       C4 = tvb_get_guint8(tvb, offset);
       proto_tree_add_item(hpsdr_u_tree_cc_misc, hf_hpsdr_u_cc_ep2_c4_14, tvb,offset, 1, ENC_BIG_ENDIAN);
 
-      // When hpsdr_u_pref_hermes_lite_cc is true.
-      // Replace ADC1 input attenuator with Hermes-Lite preamp.
-      if ( !( hpsdr_u_pref_hermes_lite_cc )) {
-         append_text_item = proto_tree_add_item(hpsdr_u_tree_cc_misc, hf_hpsdr_u_cc_adc1_rx_atten, tvb,offset, 1, C4);
+      if ( !( hpsdr_u_pref_hermes_lite_2 ) ) {
+         proto_tree_add_boolean(hpsdr_u_tree_cc_misc, hf_hpsdr_u_cc_herm_angelia_atten,tvb,offset, 1, C4);
       } else {
-         append_text_item = proto_tree_add_item(hpsdr_u_tree_cc_misc, hf_hpsdr_u_cc_hl_preamp, tvb,offset, 1, C4);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_misc, hf_hpsdr_u_cc_hl2_lna_gain_en,tvb,offset, 1, C4);
       }
-      proto_item_append_text(append_text_item," dB");
 
+      if ( hpsdr_u_pref_hermes_lite_1_cc) {
+         append_text_item = proto_tree_add_item(hpsdr_u_tree_cc_misc, hf_hpsdr_u_cc_hl1_preamp, tvb,offset, 1, ENC_BIG_ENDIAN);
+         proto_item_append_text(append_text_item," dB");
+      } else if ( hpsdr_u_pref_hermes_lite_2 ) {
+         proto_tree_add_item(hpsdr_u_tree_cc_misc, hf_hpsdr_u_cc_hl2_lna_gain, tvb,offset, 1, ENC_BIG_ENDIAN);
+      } else {
+         append_text_item = proto_tree_add_item(hpsdr_u_tree_cc_misc, hf_hpsdr_u_cc_adc1_rx_atten, tvb,offset, 1, ENC_BIG_ENDIAN);
+         proto_item_append_text(append_text_item," dB");
+      }
 
-      proto_tree_add_boolean(hpsdr_u_tree_cc_misc, hf_hpsdr_u_cc_herm_angelia_atten,tvb,offset, 1, C4);
       offset += 1;
 
-   } else if ( C0_masked == 0x16 ) { // ADC[123] Attn, CW Config
+   } else if ( C0_masked == 0x0B ) { // ADC[123] Attn, CW Config
 
       cc_adc_cw_item = proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
-                                                  C0_masked, "C0 Type 0x%02X: ADC[123] Attn, CW Config",C0_masked);
+                                                  C0_masked, "C0 Type 0x%02X: ADC[123] Attn, CW Config (%d)",
+                                                  C0_masked, C0_masked);
       hpsdr_u_tree_cc_adc_cw = proto_item_add_subtree(cc_adc_cw_item, ett_hpsdr_u_cc_adc_cw);
 
       C1 = tvb_get_guint8(tvb, offset);
@@ -2145,22 +2629,25 @@ static int hpsdr_usb_ep2_frame(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
       proto_tree_add_boolean(hpsdr_u_tree_cc_adc_cw, hf_hpsdr_u_cc_cw_keyer_spacing,tvb,offset, 1, C2);
       offset += 1;
 
-   } else if ( C0_masked == 0x18 ) { // Additional Mercury 1
+   } else if ( C0_masked == 0x0C ) { // Additional Mercury 1
 
       proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
-                                 C0_masked, "C0 Type 0x%02X: Additional Mercury 1",C0_masked);
+                                 C0_masked, "C0 Type 0x%02X: Additional Mercury 1 (%d)",
+                                 C0_masked,C0_masked);
       offset += 4;
 
-   } else if ( C0_masked == 0x1A ) { // Additional Mercury 2
+   } else if ( C0_masked == 0x0D ) { // Additional Mercury 2
 
       proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
-                                 C0_masked, "C0 Type 0x%02X: Additional Mercury 2",C0_masked);
+                                 C0_masked, "C0 Type 0x%02X: Additional Mercury 2 (%d)",
+                                 C0_masked,C0_masked);
       offset += 4;
 
-   } else if ( C0_masked == 0x1C ) { // ADC RX Assignment
+   } else if ( C0_masked == 0x0E ) { // ADC RX Assignment
 
       cc_rx_adc_item = proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
-                                                  C0_masked, "C0 Type 0x%02X: ADC RX Assignment",C0_masked);
+                                                  C0_masked, "C0 Type 0x%02X: ADC RX Assignment (%d)",
+                                                  C0_masked, C0_masked);
       hpsdr_u_tree_cc_rx_adc = proto_item_add_subtree(cc_rx_adc_item, ett_hpsdr_u_cc_rx_adc);
 
       C1 = tvb_get_guint8(tvb, offset);
@@ -2188,10 +2675,11 @@ static int hpsdr_usb_ep2_frame(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
       //C4 not used
       offset += 2;
 
-   } else if ( C0_masked == 0x1E ) { // CW Configuration 2
+   } else if ( C0_masked == 0x0F ) { // CW Configuration 2
 
       cc_cw1_item = proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
-                                               C0_masked, "C0 Type 0x%02X: CW Configuration 2",C0_masked);
+                                               C0_masked, "C0 Type 0x%02X: CW Configuration 2 (%d)",
+                                               C0_masked, C0_masked);
       hpsdr_u_tree_cc_cw1 = proto_item_add_subtree(cc_cw1_item, ett_hpsdr_u_cc_cw1);
 
       C1 = tvb_get_guint8(tvb, offset);
@@ -2207,10 +2695,11 @@ static int hpsdr_usb_ep2_frame(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
       //C4 not used
       offset += 2;
 
-   } else if ( C0_masked == 0x20 ) { // CW Configuration 3
+   } else if ( C0_masked == 0x10 ) { // CW Configuration 3
 
       cc_cw2_item = proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
-                                               C0_masked, "C0 Type 0x%02X: CW Configuration 3",C0_masked);
+                                               C0_masked, "C0 Type 0x%02X: CW Configuration 3 (%d)",
+                                               C0_masked, C0_masked);
       hpsdr_u_tree_cc_cw2 = proto_item_add_subtree(cc_cw2_item, ett_hpsdr_u_cc_cw2);
 
       C1 = tvb_get_guint8(tvb, offset);
@@ -2239,10 +2728,11 @@ static int hpsdr_usb_ep2_frame(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
       proto_item_append_text(append_text_item," Hz - Calculated, not on wire value.");
       offset += 1;
 
-   } else if ( C0_masked == 0x22 ) { // PWM Configuration
+   } else if ( C0_masked == 0x11 ) { // PWM Configuration
 
       cc_pwm_item = proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
-                                               C0_masked, "C0 Type 0x%02X: PWM Configuration",C0_masked);
+                                               C0_masked, "C0 Type 0x%02X: PWM Configuration (%d)",
+                                               C0_masked, C0_masked);
       hpsdr_u_tree_cc_pwm = proto_item_add_subtree(cc_pwm_item, ett_hpsdr_u_cc_pwm);
 
       C1 = tvb_get_guint8(tvb, offset);
@@ -2270,6 +2760,177 @@ static int hpsdr_usb_ep2_frame(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
       append_text_item = proto_tree_add_uint(hpsdr_u_tree_cc_pwm, hf_hpsdr_u_cc_pwm_max,tvb,offset - 1, 2, final_byte);
       proto_item_append_text(append_text_item," - Calculated, not on wire value.");
       offset += 1;
+
+
+   } else if ( C0_masked == 0x12 ) {  //2nd Alex, Firmware Envelope Gain
+
+      if ( !( hpsdr_u_pref_hermes_lite_2 )) {
+         cc_a2_feg_item = proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
+                                                     C0_masked, "C0 Type 0x%02X: 2nd Alex, Firmware Envelope Gain (%d)",
+                                                     C0_masked, C0_masked);
+         hpsdr_u_tree_cc_a2_feg = proto_item_add_subtree(cc_a2_feg_item, ett_hpsdr_u_cc_a2_feg);
+
+         C1 = tvb_get_guint8(tvb, offset);
+         append_text_item = proto_tree_add_item(hpsdr_u_tree_cc_a2_feg, *cc_conf_c1, tvb,offset, 1, ENC_BIG_ENDIAN);
+         proto_item_append_text(append_text_item," - 2nd Alex");
+
+         proto_tree_add_boolean(hpsdr_u_tree_cc_a2_feg, hf_hpsdr_u_cc_a2_c1_0, tvb,offset, 1, C1);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_a2_feg, hf_hpsdr_u_cc_a2_c1_1, tvb,offset, 1, C1);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_a2_feg, hf_hpsdr_u_cc_a2_c1_2, tvb,offset, 1, C1);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_a2_feg, hf_hpsdr_u_cc_a2_c1_3, tvb,offset, 1, C1);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_a2_feg, hf_hpsdr_u_cc_a2_c1_4, tvb,offset, 1, C1);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_a2_feg, hf_hpsdr_u_cc_a2_c1_5, tvb,offset, 1, C1);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_a2_feg, hf_hpsdr_u_cc_a2_c1_6, tvb,offset, 1, C1);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_a2_feg, hf_hpsdr_u_cc_a2_c1_7, tvb,offset, 1, C1);
+         offset += 1;
+
+         C2 = tvb_get_guint8(tvb, offset);
+         append_text_item = proto_tree_add_item(hpsdr_u_tree_cc_a2_feg, *cc_conf_c2, tvb,offset, 1, ENC_BIG_ENDIAN);
+         proto_item_append_text(append_text_item," - 2nd Alex");
+
+         proto_tree_add_boolean(hpsdr_u_tree_cc_a2_feg, hf_hpsdr_u_cc_a2_c2_0, tvb,offset, 1, C1);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_a2_feg, hf_hpsdr_u_cc_a2_c2_1, tvb,offset, 1, C1);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_a2_feg, hf_hpsdr_u_cc_a2_c2_2, tvb,offset, 1, C1);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_a2_feg, hf_hpsdr_u_cc_a2_c2_3, tvb,offset, 1, C1);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_a2_feg, hf_hpsdr_u_cc_a2_c2_4, tvb,offset, 1, C1);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_a2_feg, hf_hpsdr_u_cc_a2_c2_5, tvb,offset, 1, C1);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_a2_feg, hf_hpsdr_u_cc_a2_c2_6, tvb,offset, 1, C1);
+         proto_tree_add_boolean(hpsdr_u_tree_cc_a2_feg, hf_hpsdr_u_cc_a2_c2_7, tvb,offset, 1, C1);
+         offset += 1;
+
+         proto_tree_add_item(hpsdr_u_tree_cc_a2_feg, *cc_conf_c3_c4, tvb,offset, 2, ENC_BIG_ENDIAN);
+         proto_tree_add_item(hpsdr_u_tree_cc_a2_feg, hf_hpsdr_u_cc_feg, tvb,offset, 2, ENC_BIG_ENDIAN);
+         offset += 2;
+
+      } else { // Hermes-Lite2 RX 8 NCO Frequency
+
+         proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
+                                    C0_masked, "C0 Type 0x%02X: HL2 - RX 8 NCO Frequency (%d)",
+                                    C0_masked, C0_masked);
+         append_text_item =  proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_nco_rx_8,tvb,offset, 4, ENC_BIG_ENDIAN);
+         proto_item_append_text(append_text_item," Hz");
+         offset += 4;
+      }
+
+      // Hermes-Lite2 C0 Types
+   } else if ( hpsdr_u_pref_hermes_lite_2 ) {
+
+      if ( C0_masked == 0x13 ) {    // HL2 RX 9 NCO Frequency
+
+         proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
+                                    C0_masked, "C0 Type 0x%02X: HL2 - RX 9 NCO Frequency (%d)",
+                                    C0_masked, C0_masked);
+         append_text_item =  proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_nco_rx_9,tvb,offset, 4, ENC_BIG_ENDIAN);
+         proto_item_append_text(append_text_item," Hz");
+         offset += 4;
+
+      } else if ( C0_masked == 0x14 ) {    // HL2 RX 10 NCO Frequency
+
+         proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
+                                    C0_masked, "C0 Type 0x%02X: HL2 - RX 10 NCO Frequency (%d)",
+                                    C0_masked, C0_masked);
+         append_text_item =  proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_nco_rx_10,tvb,offset, 4, ENC_BIG_ENDIAN);
+         proto_item_append_text(append_text_item," Hz");
+         offset += 4;
+
+      } else if ( C0_masked == 0x15 ) {    // HL2 RX 11 NCO Frequency
+
+         proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
+                                    C0_masked, "C0 Type 0x%02X: HL2 - RX 11 NCO Frequency (%d)",
+                                    C0_masked, C0_masked);
+         append_text_item =  proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_nco_rx_11,tvb,offset, 4, ENC_BIG_ENDIAN);
+         proto_item_append_text(append_text_item," Hz");
+         offset += 4;
+
+      } else if ( C0_masked == 0x16 ) {    // HL2 RX 12 NCO Frequency
+
+         proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
+                                    C0_masked, "C0 Type 0x%02X: HL2 - RX 12 NCO Frequency (%d)",
+                                    C0_masked, C0_masked);
+         append_text_item =  proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_nco_rx_10,tvb,offset, 4, ENC_BIG_ENDIAN);
+         proto_item_append_text(append_text_item," Hz");
+         offset += 4;
+
+      } else if ( C0_masked == 0x2B ) {    // HL2 Predistortion
+         proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
+                                    C0_masked, "C0 Type 0x%02X: HL2 - Predistortion (%d)",
+                                    C0_masked, C0_masked);
+
+         proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_pred_sub_idx, tvb,offset, 1, ENC_BIG_ENDIAN);
+         offset += 1;
+         proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_pred, tvb,offset, 1, ENC_BIG_ENDIAN);
+         offset += 3;
+
+      } else if ( C0_masked == 0x3B ) {     // HL2 AD9866 SPI
+         proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
+                                    C0_masked, "C0 Type 0x%02X: HL2 - SPI (%d)",
+                                    C0_masked, C0_masked);
+
+         proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_spi_cookie, tvb, offset, 1, ENC_BIG_ENDIAN);
+         offset += 1;
+
+         proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_spi_addr, tvb, offset, 1, ENC_BIG_ENDIAN);
+         offset += 2;
+
+         proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_spi_data, tvb, offset, 1, ENC_BIG_ENDIAN);
+         offset += 1;
+
+      } else if ( C0_masked == 0x3C ) {      // HL2 i2c1
+         proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
+                                    C0_masked, "C0 Type 0x%02X: HL2 - i2c-1 (%d)",
+                                    C0_masked, C0_masked);
+
+         proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_i2c1_cookie, tvb, offset, 1, ENC_BIG_ENDIAN);
+         offset += 1;
+
+         proto_tree_add_boolean(tree, hf_hpsdr_u_cc_hl2_i2c1_stop, tvb, offset, 1, ENC_BIG_ENDIAN);
+         proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_i2c1_addr, tvb, offset, 1, ENC_BIG_ENDIAN);
+         offset += 1;
+
+         proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_i2c1_con, tvb, offset, 1, ENC_BIG_ENDIAN);
+         offset += 1;
+
+         proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_i2c1_data, tvb, offset, 1, ENC_BIG_ENDIAN);
+         offset += 1;
+
+      } else if ( C0_masked == 0x3D ) {       // HL2 i2c2
+         proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
+                                    C0_masked, "C0 Type 0x%02X: HL2 - i2c-2 (%d)",
+                                    C0_masked, C0_masked);
+
+         proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_i2c2_cookie, tvb, offset, 1, ENC_BIG_ENDIAN);
+         offset += 1;
+
+         proto_tree_add_boolean(tree, hf_hpsdr_u_cc_hl2_i2c2_stop, tvb, offset, 1, ENC_BIG_ENDIAN);
+         proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_i2c2_addr, tvb, offset, 1, ENC_BIG_ENDIAN);
+         offset += 1;
+
+         proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_i2c2_con, tvb, offset, 1, ENC_BIG_ENDIAN);
+         offset += 1;
+
+         proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_i2c2_data, tvb, offset, 1, ENC_BIG_ENDIAN);
+         offset += 1;
+
+      } else if ( C0_masked == 0x3F ) {     // HL2 Extended Write Data
+
+         proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
+                                    C0_masked, "C0 Type 0x%02X: HL2 - Extended Write Data (%d)",
+                                    C0_masked, C0_masked);
+         proto_tree_add_item(tree, hf_hpsdr_u_cc_hl2_ewd, tvb,offset, 4, ENC_BIG_ENDIAN);
+         offset += 4;
+
+      } else {    // C0 Not Defined
+
+         proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
+                                    C0_masked, "C0 Type 0x%02X: Not Defined (%d)",C0_masked, C0_masked);
+         offset += 4;
+      }
+
+   } else { // C0 Not Defined
+
+      proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
+                                 C0_masked, "C0 Type 0x%02X: Not Defined (%d)",C0_masked, C0_masked);
+      offset += 4;
 
    }
 
@@ -2343,7 +3004,9 @@ static int hpsdr_usb_ep6_frame(proto_tree *tree, tvbuff_t *tvb, int offset, int 
    int *c0_ptt = NULL;
    int *c0_dash = NULL;
    int *c0_dot = NULL;
+   int *c0_hl2_ack = NULL;
    int *c0_type = NULL;
+   int *c0_type_hl2 = NULL;
    int *ep6_data = NULL;
    int *ett_ep6_data = NULL;
    int *ep6_data_sub = NULL;
@@ -2375,7 +3038,13 @@ static int hpsdr_usb_ep6_frame(proto_tree *tree, tvbuff_t *tvb, int offset, int 
       c0_ptt = &hf_hpsdr_u_c0_ptt_1;
       c0_dash = &hf_hpsdr_u_c0_dash_1;
       c0_dot = &hf_hpsdr_u_c0_dot_1;
-      c0_type = &hf_hpsdr_u_c0_type_1;
+
+      if (hpsdr_u_pref_hermes_lite_2) {
+         c0_hl2_ack = &hf_hpsdr_u_c0_hl2_ack_1;
+         c0_type_hl2 = &hf_hpsdr_u_c0_type_ep6_hl2_1;
+      }
+
+      c0_type = &hf_hpsdr_u_c0_type_ep6_1;
       ett_ep6_data = &ett_hpsdr_u_ep6_data_1;
       ep6_data_sub = &hf_hpsdr_u_ep6_data_sub_1;
       ep6_data = &hf_hpsdr_u_ep6_data_1;
@@ -2389,7 +3058,13 @@ static int hpsdr_usb_ep6_frame(proto_tree *tree, tvbuff_t *tvb, int offset, int 
       c0_ptt = &hf_hpsdr_u_c0_ptt_2;
       c0_dash = &hf_hpsdr_u_c0_dash_2;
       c0_dot = &hf_hpsdr_u_c0_dot_2;
-      c0_type = &hf_hpsdr_u_c0_type_2;
+
+      if (hpsdr_u_pref_hermes_lite_2) {
+         c0_hl2_ack = &hf_hpsdr_u_c0_hl2_ack_2;
+         c0_type_hl2 = &hf_hpsdr_u_c0_type_ep6_hl2_2;
+      }
+
+      c0_type = &hf_hpsdr_u_c0_type_ep6_2;
       ett_ep6_data = &ett_hpsdr_u_ep6_data_2;
       ep6_data_sub = &hf_hpsdr_u_ep6_data_sub_2;
       ep6_data = &hf_hpsdr_u_ep6_data_2;
@@ -2408,25 +3083,75 @@ static int hpsdr_usb_ep6_frame(proto_tree *tree, tvbuff_t *tvb, int offset, int 
    hpsdr_u_tree_c0 = proto_item_add_subtree(c0_item, ett_hpsdr_u_c0);
 
    proto_tree_add_item(hpsdr_u_tree_c0, *u_c0, tvb,offset, 1, ENC_BIG_ENDIAN);
-   //C0_masked = ( C0 & 0b11111000 ) ; // bitwise and
-   C0_masked = ( C0 & 0xF8 );
 
-   proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_ptt, tvb,offset, 1, C0);
-   proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_dash, tvb,offset, 1, C0);
-   proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_dot, tvb,offset, 1, C0);
-   append_text_item = proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_type, tvb,offset, 1, C0 );
-   proto_item_append_text(append_text_item," 0x%02X", C0_masked);
-   offset += 1;
+   // "C0 type" is a 5 bit number.
+   // Right shift to remove the 0, 1, 2 bit. The bit 0 is PTT, bit 1 is DASH,
+   // and bit 2 is DOT
+   C0_masked = C0 >> 3;
 
-   // SDR Info 0
-   // Foward Power 08
-   // Reverse Power 10
-   // Power Supply 18
-   // ADC Overflow 20
-   if ( C0_masked == 0x0 ) {  // SDR Info 0
+   // Hermes-Lite2:
+   //   C0 type is a 4 bit number. Mask out the 5th bit with bitwise and
+   //   Then display ACK.
+   if (hpsdr_u_pref_hermes_lite_2) {
+      C0_masked = ( C0_masked & 0x0F );
+      proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_hl2_ack, tvb,offset, 1, C0);
+   }
+
+   if (!( hpsdr_u_pref_hermes_lite_2 )) {
+      proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_ptt, tvb,offset, 1, C0);
+      proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_dash, tvb,offset, 1, C0);
+      proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_dot, tvb,offset, 1, C0);
+      append_text_item = proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_type, tvb,offset, 1, C0);
+      proto_item_append_text(append_text_item," 0x%02X %d ", C0_masked, C0_masked);
+      offset += 1;
+   } else {
+      // When hpsdr_u_pref_hermes_lite_2 is true test for ACK == 1.
+      if ( ( C0 & BOOLEAN_B7 ) == 0x80) {
+         proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_ptt, tvb,offset, 1, C0);
+
+         C0_masked = ( C0 & 0x7F );
+         C0_masked = C0_masked >> 1;
+
+         append_text_item = proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_type_hl2, tvb,offset, 1, C0 );
+         proto_item_append_text(append_text_item," 0x%02X %d ", C0_masked, C0_masked);
+         offset += 1;
+
+      } else { // When ACK == 0 use core protocol
+
+         // Not needed because if the 7th bit is we should not get here.
+         //C0_masked = ( C0 & 0x7F );
+
+         C0_masked = C0 >> 3;
+
+         proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_ptt, tvb,offset, 1, C0);
+         proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_dash, tvb,offset, 1, C0);
+         proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_dot, tvb,offset, 1, C0);
+         append_text_item = proto_tree_add_boolean(hpsdr_u_tree_c0, *c0_type, tvb,offset, 1, C0 );
+         proto_item_append_text(append_text_item," 0x%02X %d ", C0_masked, C0_masked);
+         offset += 1;
+
+      }
+
+
+   }
+
+
+   // The "C0 Types" are 5 bit numbers.
+   // Before version 0.4.0 they were in-correctly treated as 8 bit numbers.
+   // 0 0x00 SDR Info
+   // 1 0x01 Foward Power
+   // 2 0x02 Reverse Power
+   // 3 0x03 Power Supply
+   // 4 0x04 ADC Overflow
+
+   // Hermes-Lite2 Addtions
+   // - 4 bit numbers because the 7th bit of C0 is repurposed for ACK
+
+   if ( C0_masked == 0x0 ) {  // SDR Info
 
       cc_info_item = proto_tree_add_uint_format(tree, hf_hpsdr_u_cc_info_sub, tvb, offset, 4,
-                                                C0_masked, "C0 Type 0x%02X: SDR Info",C0_masked);
+                                                C0_masked, "C0 Type 0x%02X: SDR Info (%d)",
+                                                C0_masked, C0_masked);
       hpsdr_u_tree_cc_info = proto_item_add_subtree(cc_info_item, ett_hpsdr_u_cc_info);
 
       C1 = tvb_get_guint8(tvb, offset);
@@ -2456,10 +3181,11 @@ static int hpsdr_usb_ep6_frame(proto_tree *tree, tvbuff_t *tvb, int offset, int 
                                  "Interface Device Software Version: %d.%.1d  :Ozy/Magister, Metis, Hermes, etc.",( value / 10 ),( value % 10 ));
       offset += 1;
 
-   } else if ( C0_masked == 0x08 ) {  // Foward Power 08
+   } else if ( C0_masked == 0x01 ) {  // Forward Power
 
       cc_fp_item = proto_tree_add_uint_format(tree, hf_hpsdr_u_cc_fwdpw_sub, tvb, offset, 4,
-                                              C0_masked, "C0 Type 0x%02X: Forward Power",C0_masked );
+                                              C0_masked, "C0 Type 0x%02X: Forward Power (%d)",
+                                              C0_masked, C0_masked );
       hpsdr_u_tree_cc_fp = proto_item_add_subtree(cc_fp_item, ett_hpsdr_u_cc_fp);
 
       raw_bytes = tvb_get_guint16(tvb, offset, ENC_BIG_ENDIAN);
@@ -2536,10 +3262,11 @@ static int hpsdr_usb_ep6_frame(proto_tree *tree, tvbuff_t *tvb, int offset, int 
                                  "SDR TX Power From Anntena Preselector       - ADC: %d  Volts: %f  Watts: %f",raw_bytes,volts,watts);
       offset += 2;
 
-   } else if ( C0_masked == 0x10) {  // Reverse Power 10
+   } else if ( C0_masked == 0x02) {  // Reverse Power
 
       cc_rp_item = proto_tree_add_uint_format(tree, hf_hpsdr_u_cc_revpwd_sub, tvb, offset, 4,
-                                              C0_masked, "C0 Type 0x%02X: Reverse Power",C0_masked );
+                                              C0_masked, "C0 Type 0x%02X: Reverse Power (%d)",
+                                              C0_masked, C0_masked);
       hpsdr_u_tree_cc_rp = proto_item_add_subtree(cc_rp_item, ett_hpsdr_u_cc_rp);
 
       raw_bytes = tvb_get_guint16(tvb, offset, ENC_BIG_ENDIAN);
@@ -2564,10 +3291,11 @@ static int hpsdr_usb_ep6_frame(proto_tree *tree, tvbuff_t *tvb, int offset, int 
       proto_tree_add_item(hpsdr_u_tree_cc_rp, hf_hpsdr_u_cc_revpwd_ain3, tvb,offset, 2, ENC_BIG_ENDIAN);
       offset += 2;
 
-   } else if ( C0_masked == 0x18) {  // Power Supply 18
+   } else if ( C0_masked == 0x03) {  // Power Supply
 
       cc_ps_item = proto_tree_add_uint_format(tree, hf_hpsdr_u_cc_pwsupp_sub, tvb, offset, 4,
-                                              C0_masked, "C0 Type 0x%02X: Power Supply",C0_masked );
+                                              C0_masked, "C0 Type 0x%02X: Power Supply (%d)",
+                                              C0_masked, C0_masked );
       hpsdr_u_tree_cc_ps = proto_item_add_subtree(cc_ps_item, ett_hpsdr_u_cc_ps);
 
       proto_tree_add_item(hpsdr_u_tree_cc_ps, hf_hpsdr_u_cc_pwsupp_ain4, tvb,offset, 2, ENC_BIG_ENDIAN);
@@ -2588,10 +3316,11 @@ static int hpsdr_usb_ep6_frame(proto_tree *tree, tvbuff_t *tvb, int offset, int 
       offset += 2;
 
 
-   } else if ( C0_masked == 0x20) {  // ADC Overflow 20
+   } else if ( C0_masked == 0x04) {  // ADC Overflow
 
       cc_ov_item = proto_tree_add_uint_format(tree, hf_hpsdr_u_cc_overflow_sub, tvb, offset, 4,
-                                              C0_masked, "C0 Type 0x%02X: ADC Overflow",C0_masked );
+                                              C0_masked, "C0 Type 0x%02X: ADC Overflow (%d)",
+                                              C0_masked, C0_masked );
       hpsdr_u_tree_cc_ov = proto_item_add_subtree(cc_ov_item, ett_hpsdr_u_cc_ov);
 
       C1 = tvb_get_guint8(tvb, offset);
@@ -2617,6 +3346,13 @@ static int hpsdr_usb_ep6_frame(proto_tree *tree, tvbuff_t *tvb, int offset, int 
 
       proto_tree_add_item(hpsdr_u_tree_cc_ov, hf_hpsdr_u_cc_overflow_mercury4, tvb,offset, 1, ENC_BIG_ENDIAN);
       offset += 1;
+
+   } else { // C0 Not Defined
+
+      proto_tree_add_uint_format(tree, *c0_sub, tvb, offset, 4,
+                                 C0_masked, "C0 Type 0x%02X: Not Defined (%d)",
+                                 C0_masked, C0_masked );
+      offset += 4;
 
    }
 
@@ -2833,7 +3569,7 @@ static void dissect_hpsdr_u(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
             proto_tree_add_item(hpsdr_u_tree, hf_hpsdr_u_bid, tvb,offset, 1, ENC_BIG_ENDIAN);
             board_id = tvb_get_guint8(tvb, offset);
             offset += 1;
-
+//hl 1?
             if ( board_id == 0x06) {    // Hermes_Lite
                proto_tree_add_item(hpsdr_u_tree, hf_hpsdr_u_hlite_ver, tvb,offset, 9, ENC_BIG_ENDIAN);
                offset += 9;

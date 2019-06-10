@@ -6,10 +6,11 @@ referred to as "Protocol 1".
 
 The protocol is definded in the documents and web page cited below.
  
-[1] Harman, Phil. and Martin, Joe. HPSDR - USB Protocol V1.58. 2014. [Online]. 
+[1] Harman, Phil. and Martin, Joe. HPSDR - USB Protocol V1.60. 2019. [Online]. 
     Available at: 
-    https://github.com/TAPR/OpenHPSDR-SVN/blob/master/Documentation/USB_protocol_V1.58.doc 
-    [Accessed: 3 May 2019]. 
+    https://github.com/TAPR/OpenHPSDR-SVN/blob/master/Documentation/USB_proto
+col_V1.60.doc
+    [Accessed: 30 May 2019]. 
 
 [2] Harman, Phil. Metis - How it Works V1.33. 2015. [Online].
     Available at:

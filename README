@@ -1,4 +1,4 @@
-10-JUN-2019 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
+04-MAR-2020 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
 
 The OpenHPSDR-USB Plug-in for Wireshark is written to disassemble the 
 OpenHPSDR USB frames over IP protocol. The protocol is also is 
@@ -8,9 +8,8 @@ The protocol is definded in the documents and web page cited below.
  
 [1] Harman, Phil. and Martin, Joe. HPSDR - USB Protocol V1.60. 2019. [Online]. 
     Available at: 
-    https://github.com/TAPR/OpenHPSDR-SVN/blob/master/Documentation/USB_proto
-col_V1.60.doc
-    [Accessed: 30 May 2019]. 
+    https://github.com/TAPR/OpenHPSDR-SVN/blob/master/Documentation/USB_protocol_V1.60.doc 
+    [Accessed: 4 March 2020]. 
 
 [2] Harman, Phil. Metis - How it Works V1.33. 2015. [Online].
     Available at:

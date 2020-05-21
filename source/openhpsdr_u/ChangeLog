@@ -1,4 +1,9 @@
-06-JUN-2019 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
+08-MAY-2020 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
+
+Version 0.4.1
+ - First version that is a candidate for release.
+ - No changes from version 0.4.0
+ - Binaries compiled with Wireshark 3.2.3 
 
 Version 0.4.0
   - Protocol version 1.60 changes.

@@ -2,7 +2,7 @@
 #
 # This file is part of the OpenHPSDR-USB Plug-in for Wireshark.
 # Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
-# Copyright 2019 Matthew J. Wolf
+# Copyright 2020 Matthew J. Wolf
 #
 # Wireshark - Network traffic analyzer
 # By Gerald Combs <gerald@wireshark.org>
@@ -14,7 +14,7 @@
 include(WiresharkPlugin)
 
 # Plugin name and version info (major minor micro extra)
-set_module_info(openhpsdr_u 0 4 0 0)
+set_module_info(openhpsdr_u 0 4 1 0)
 
 set(DISSECTOR_SRC
 	packet_openhpsdr_u.c

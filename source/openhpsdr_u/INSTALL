@@ -1,4 +1,4 @@
-06-JUN-2019 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
+08-MAY-2020 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
 
 1. Remove old Plug-in Library File
 ----------------------------------
@@ -17,7 +17,7 @@ the new plug-in.
      b. Go to the Help Menu.
      c. Open the "About Wireshark Menu".
      d. Click on the Plugins tab.
-     e.Look and see where the other plugins are located.
+     e. Look and see where the other plugins are located.
 
   2. Remove old plug-in library file.
 
@@ -60,17 +60,17 @@ I have only been able to compile the plug-in in the Wireshark Source Tree.
           ...
           set(PLUGIN_SRC_DIRS
                   ...
-                  plugins/unistim
-                  plugins/wimax
-                  plugins/wimaxasncp
-                  plugins/wimaxmacphy
-                  plugins/openhpsdr_u
+                  plugins/epan/unistim
+                  plugins/epan/wimax
+                  plugins/epan/wimaxasncp
+                  plugins/epan/wimaxmacphy
+                  plugins/epan/openhpsdr_u
                   ${CUSTOM_PLUGIN_SRC_DIR}
           )
 
-  Add "plugins/openhpsdr_u" to the end of the list. An example is above.
+  Add "plugins/epan/openhpsdr_u" to the end of the list. An example is above.
 
-  4.Create the build directory.
+  4. Create the build directory.
 
     cd <Wireshark Source Root>
     mkdir build

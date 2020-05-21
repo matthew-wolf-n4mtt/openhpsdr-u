@@ -1,4 +1,4 @@
-04-MAR-2020 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
+08-MAY-2020 Matthew J. Wolf <matthew.wolf.hpsdr@speciosus.net>
 
 The OpenHPSDR-USB Plug-in for Wireshark is written to disassemble the 
 OpenHPSDR USB frames over IP protocol. The protocol is also is 
@@ -25,6 +25,11 @@ The protocol is definded in the documents and web page cited below.
     Available: 
     https://github.com/softerhardware/Hermes-Lite2/wiki/Protocol
     [Accessed: 06 June 2019].
+
+Version 0.4.1
+ - First version that is a candidate for release.
+ - No changes from version 0.4.0
+ - Binaries compiled with Wireshark 3.2.3 
 
 Version 0.4.0
   - Protocol version 1.60 changes.

@@ -802,7 +802,7 @@ proto_register_hpsdr_u(void)
           NULL, BIT12_MASK,
           NULL, HFILL }},
       { &hf_hpsdr_u_cc_fwdpw_ant_pre,
-        { "SDR TX Forward Power From Anntena Preselector (AIN1)", "hpsdr-u.cc.fwdpw.ant-pre",
+        { "SDR TX Forward Power From Antenna Preselector (AIN1)", "hpsdr-u.cc.fwdpw.ant-pre",
           FT_UINT16, BASE_HEX,
           NULL, BIT12_MASK,
           NULL, HFILL }},
@@ -812,7 +812,7 @@ proto_register_hpsdr_u(void)
           NULL, ALL_BITS_MASK,
           NULL, HFILL }},
       { &hf_hpsdr_u_cc_revpwd_rev,
-        { "SDR Reverse Power From Anntena Preselector (AIN2)    ", "hpsdr-u.cc.revpwd.ant-pre-rev",
+        { "SDR Reverse Power From Antenna Preselector (AIN2)    ", "hpsdr-u.cc.revpwd.ant-pre-rev",
           FT_UINT16, BASE_HEX,
           NULL, BIT12_MASK,
           NULL, HFILL }},
@@ -1122,12 +1122,12 @@ proto_register_hpsdr_u(void)
           TFS(&local_set_notset), HOST_C2_OC6,
           NULL, HFILL }},
       { &hf_hpsdr_u_cc_ant_pre_attn,
-        { "Anntena Preselector Attenuator", "hpsdr-u.cc.ant-pre-attn",
+        { "Antenna Preselector Attenuator", "hpsdr-u.cc.ant-pre-attn",
           FT_UINT8, BASE_HEX,
           VALS(ep2_pre_attn), HOST_C3_P_ATT,
           NULL, HFILL }},
       { &hf_hpsdr_u_cc_ant_pre_pre_amp,
-        { "    Anntena Preselector Preamp", "hpsdr-u.cc.ant-pre-pre_amp",
+        { "    Antenna Preselector Preamp", "hpsdr-u.cc.ant-pre-pre_amp",
           FT_BOOLEAN, BOOLEAN_MASK,
           TFS(&local_on_off), HOST_C3_PREAM,
           NULL, HFILL }},
@@ -1162,17 +1162,17 @@ proto_register_hpsdr_u(void)
           TFS(&local_on_off), HOST_C3_IFRAD,
           NULL, HFILL }},
       { &hf_hpsdr_u_cc_ant_pre_ant,
-        { "Anntena Preselector RX Anntena Selection", "hpsdr-u.cc.ant-pre-ant",
+        { "Antenna Preselector RX Antenna Selection", "hpsdr-u.cc.ant-pre-ant",
           FT_UINT8, BASE_HEX,
           VALS(ep2_pre_rx_ant), HOST_C3_P_ANT,
           NULL, HFILL }},
       { &hf_hpsdr_u_cc_ant_pre_rx_out,
-        { "    Anntena Preselector RX Out", "hpsdr-u.cc.ant-pre-rx-out",
+        { "    Antenna Preselector RX Out", "hpsdr-u.cc.ant-pre-rx-out",
           FT_BOOLEAN, BOOLEAN_MASK,
           TFS(&local_on_off), HOST_C3_P_OUT,
           NULL, HFILL }},
       { &hf_hpsdr_u_cc_ant_pre_tx_relay,
-        { "Anntena Preselector TX Relay Selection", "hpsdr-u.cc.ant-pre-tx-relay",
+        { "Antenna Preselector TX Relay Selection", "hpsdr-u.cc.ant-pre-tx-relay",
           FT_UINT8, BASE_HEX,
           VALS(ep2_pre_tx_relay), HOST_C4_P_T_R,
           NULL, HFILL }},
@@ -2258,7 +2258,7 @@ static int hpsdr_usb_ep2_frame(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
    //  6 0x06 RX 5 NCO Frequency
    //  7 0x07 RX 6 NCO Frequency
    //  8 0x08 RX 7 NCO Frequency
-   //  9 0x09 TX Drive, Anntena Presect, VNA
+   //  9 0x09 TX Drive, Antenna Presect, VNA
    // 10 0x0A RX Pre-amp, IF Gain, PureSignal, Open Drain, TTL, 20db/ADC1 Attn
    // 11 0x0B ADC[123] Attn, CW Config
    // 12 0x0C Additional Mercury 1
@@ -2457,7 +2457,7 @@ static int hpsdr_usb_ep2_frame(proto_tree *tree, tvbuff_t *tvb, packet_info *pin
       proto_item_append_text(append_text_item," Hz");
       offset += 4;
 
-   } else if ( C0_masked == 0x09 ) { // TX Drive, Anntena Presect, VNA
+   } else if ( C0_masked == 0x09 ) { // TX Drive, Antenna Presect, VNA
 
       proto_tree_add_uint_format(tree, *cc_conf_sub, tvb, offset, 4,
                                  C0_masked, "C0 Type 0x%02X: TX Drive, HPF and LPF, VNA (%d)",
@@ -3259,7 +3259,7 @@ static int hpsdr_usb_ep6_frame(proto_tree *tree, tvbuff_t *tvb, int offset, int 
       if (volts != 0 ) { watts = (float)( pow(volts,2) / bridge_volt ); }
 
       proto_tree_add_uint_format(hpsdr_u_tree_cc_fp, hf_hpsdr_u_cc_fwdpw_ant_pre,tvb,offset, 2, watts,
-                                 "SDR TX Power From Anntena Preselector       - ADC: %d  Volts: %f  Watts: %f",raw_bytes,volts,watts);
+                                 "SDR TX Power From Antenna Preselector       - ADC: %d  Volts: %f  Watts: %f",raw_bytes,volts,watts);
       offset += 2;
 
    } else if ( C0_masked == 0x02) {  // Reverse Power
@@ -3282,7 +3282,7 @@ static int hpsdr_usb_ep6_frame(proto_tree *tree, tvbuff_t *tvb, int offset, int 
       if (volts != 0 ) { watts = (float)pow(volts,2) / bridge_volt; }
 
       proto_tree_add_uint_format(hpsdr_u_tree_cc_rp, hf_hpsdr_u_cc_revpwd_rev,tvb,offset, 2, watts,
-                                 "SDR Reverse Power From Anntena Preselector - ADC: %d  Volts: %f  Watts: %f",raw_bytes,volts,watts);
+                                 "SDR Reverse Power From Antenna Preselector - ADC: %d  Volts: %f  Watts: %f",raw_bytes,volts,watts);
 
       proto_tree_add_item(hpsdr_u_tree_cc_rp, hf_hpsdr_u_cc_revpwd_rev, tvb,offset, 2, ENC_BIG_ENDIAN);
 
